@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Setup script for Chest X-Ray CSC Project
+# Setup script for Chest X-Ray Classification Project
 
 set -e
 
-echo "🚀 Setting up Chest X-Ray Classification Project for CSC Scholarship"
+echo "🚀 Setting up Chest X-Ray Classification Project"
 echo "=================================================================="
 
 # Check Python version
@@ -64,7 +64,7 @@ echo "📁 Creating directories..."
 mkdir -p logs outputs models data
 
 # Check dataset
-DATASET_PATH="/run/media/saqib/067E00563129A4C4/Chest X-Ray"
+DATASET_PATH="./data/Chest X-Ray"
 if [ -d "$DATASET_PATH" ]; then
     echo "✅ Dataset found at: $DATASET_PATH"
     echo "   Train: $(find "$DATASET_PATH/train" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l) images"
@@ -72,7 +72,8 @@ if [ -d "$DATASET_PATH" ]; then
     echo "   Test:  $(find "$DATASET_PATH/test" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l) images"
 else
     echo "⚠️  Dataset not found at: $DATASET_PATH"
-    echo "   Please ensure the dataset is mounted at this location"
+    echo "   Download from: https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset"
+    echo "   Extract to ./data/Chest X-Ray/ or update configs/config.yaml with your path"
 fi
 
 # Check device
@@ -96,4 +97,4 @@ echo "  2. Run training: python scripts/train.py --config configs/config.yaml"
 echo "  3. Monitor: tensorboard --logdir logs"
 echo "  4. Or open notebook: jupyter lab notebooks/exploration.ipynb"
 echo ""
-echo "For CSC application, see README.md for what professors expect!"
+echo "See README.md for full documentation!"

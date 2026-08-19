@@ -1,0 +1,86 @@
+# Docker ignore patterns for faster builds
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+*.md
+LICENSE
+CONTRIBUTING.md
+SECURITY.md
+GITHUB_SETUP.md
+.docker/
+.dockerignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Data (large files)
+data/Chest X-Ray/
+data/chest-xray-dataset/
+*.csv
+*.parquet
+*.npy
+*.npz
+
+# Outputs and logs
+logs/
+outputs/
+*.log
+wandb/
+*.wandb
+runs/
+tensorboard/
+.multirun/
+
+# Model checkpoints
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Scripts and configs (copied explicitly in Dockerfile)
+setup.sh
+docker-compose.yml
+Dockerfile
+.dockerignore

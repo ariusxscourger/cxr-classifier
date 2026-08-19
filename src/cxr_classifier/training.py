@@ -16,8 +16,8 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
 
-from chestxray.config import Config
-from chestxray.evaluation import Evaluator
+from cxr_classifier.config import Config
+from cxr_classifier.evaluation import Evaluator
 
 
 class LabelSmoothingCrossEntropy(nn.Module):
@@ -117,28 +117,34 @@ class Trainer:
 
     def _create_optimizer(self, opt_config) -> Optimizer:
         """Create optimizer."""
+        lr = float(opt_config.lr) if isinstance(opt_config.lr, str) else opt_config.lr
+        weight_decay = float(opt_config.weight_decay) if isinstance(opt_config.weight_decay, str) else opt_config.weight_decay
+        eps = float(opt_config.eps) if isinstance(opt_config.eps, str) else opt_config.eps
+        betas = opt_config.betas if isinstance(opt_config.betas, list) else [0.9, 0.999]
+        
         if opt_config.name == "adamw":
             return torch.optim.AdamW(
                 self.model.parameters(),
-                lr=opt_config.lr,
-                weight_decay=opt_config.weight_decay,
-                betas=opt_config.betas,
-                eps=opt_config.eps,
+                lr=lr,
+                weight_decay=weight_decay,
+                betas=betas,
+                eps=eps,
             )
         elif opt_config.name == "adam":
             return torch.optim.Adam(
                 self.model.parameters(),
-                lr=opt_config.lr,
-                weight_decay=opt_config.weight_decay,
-                betas=opt_config.betas,
-                eps=opt_config.eps,
+                lr=lr,
+                weight_decay=weight_decay,
+                betas=betas,
+                eps=eps,
             )
         elif opt_config.name == "sgd":
+            momentum = float(opt_config.momentum) if hasattr(opt_config, 'momentum') and isinstance(opt_config.momentum, str) else 0.9
             return torch.optim.SGD(
                 self.model.parameters(),
-                lr=opt_config.lr,
-                weight_decay=opt_config.weight_decay,
-                momentum=0.9,
+                lr=lr,
+                weight_decay=weight_decay,
+                momentum=momentum,
                 nesterov=True,
             )
         else:
@@ -146,24 +152,30 @@ class Trainer:
 
     def _create_scheduler(self, sched_config) -> _LRScheduler:
         """Create learning rate scheduler."""
+        eta_min = float(sched_config.eta_min) if isinstance(sched_config.eta_min, str) else sched_config.eta_min
+        warmup_lr = float(sched_config.warmup_lr) if isinstance(sched_config.warmup_lr, str) else sched_config.warmup_lr
+        t_0 = int(sched_config.t_0) if isinstance(sched_config.t_0, str) else sched_config.t_0
+        t_mult = int(sched_config.t_mult) if isinstance(sched_config.t_mult, str) else sched_config.t_mult
+        warmup_epochs = int(sched_config.warmup_epochs) if isinstance(sched_config.warmup_epochs, str) else sched_config.warmup_epochs
+
         if sched_config.name == "cosine_annealing_warm_restarts":
             base_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
                 self.optimizer,
-                T_0=sched_config.t_0,
-                T_mult=sched_config.t_mult,
-                eta_min=sched_config.eta_min,
+                T_0=t_0,
+                T_mult=t_mult,
+                eta_min=eta_min,
             )
             return WarmupScheduler(
                 self.optimizer,
                 base_scheduler,
-                warmup_epochs=sched_config.warmup_epochs,
-                warmup_lr=sched_config.warmup_lr,
+                warmup_epochs=warmup_epochs,
+                warmup_lr=warmup_lr,
             )
         elif sched_config.name == "cosine_annealing":
             return torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer,
                 T_max=self.config.training.epochs,
-                eta_min=sched_config.eta_min,
+                eta_min=eta_min,
             )
         elif sched_config.name == "reduce_on_plateau":
             return torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -171,7 +183,7 @@ class Trainer:
                 mode="max",
                 factor=0.5,
                 patience=10,
-                min_lr=sched_config.eta_min,
+                min_lr=eta_min,
             )
         elif sched_config.name == "one_cycle":
             return torch.optim.lr_scheduler.OneCycleLR(
@@ -196,6 +208,7 @@ class Trainer:
                     entity=config.logging.wandb_entity,
                     config=config.to_dict(),
                     dir=str(self.log_dir),
+                    mode="offline"  # Works without internet
                 )
             except Exception as e:
                 print(f"Warning: Failed to initialize wandb: {e}")

@@ -1,0 +1,51 @@
+name: Feature Request
+description: Suggest a new feature
+title: "[FEAT]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for suggesting a feature! Please describe your idea."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this solve? Why is it needed?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like to solve it?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you've considered
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+      default: Medium
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Model Architecture
+        - Data Pipeline
+        - Training Loop
+        - Evaluation/Metrics
+        - Inference/Deployment
+        - Configuration
+        - Documentation
+        - CI/CD
+      default: Model Architecture

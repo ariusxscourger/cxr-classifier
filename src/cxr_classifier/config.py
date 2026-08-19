@@ -146,7 +146,8 @@ class Config:
             dataset=DatasetConfig(**cfg_dict.get("dataset", {})),
             model=ModelConfig(**cfg_dict.get("model", {})),
             training=TrainingConfig(
-                **cfg_dict.get("training", {}),
+                **{k: v for k, v in cfg_dict.get("training", {}).items() 
+                   if k not in ["optimizer", "scheduler", "loss", "early_stopping"]},
                 optimizer=OptimizerConfig(**cfg_dict.get("training", {}).get("optimizer", {})),
                 scheduler=SchedulerConfig(**cfg_dict.get("training", {}).get("scheduler", {})),
                 loss=LossConfig(**cfg_dict.get("training", {}).get("loss", {})),

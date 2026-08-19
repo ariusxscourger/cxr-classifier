@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Main training script for Chest X-Ray Classification.
-Used for CSC Scholarship Application Project.
+Main training script for CXR-Classifier.
 """
 
 import argparse
@@ -12,17 +11,22 @@ from pathlib import Path
 import torch
 import yaml
 
+# Disable HF Hub and wandb network calls for fully offline operation
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["WANDB_MODE"] = "offline"
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from chestxray.config import load_config
-from chestxray.data import get_dataloaders
-from chestxray.models import create_model, get_model_info
-from chestxray.training import Trainer
+from cxr_classifier.config import load_config
+from cxr_classifier.data import get_dataloaders
+from cxr_classifier.models import create_model, get_model_info
+from cxr_classifier.training import Trainer
+from cxr_classifier.evaluation import evaluate_model
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train Chest X-Ray Classifier")
+    parser = argparse.ArgumentParser(description="Train CXR-Classifier")
     parser.add_argument(
         "--config",
         type=str,
@@ -155,7 +159,6 @@ def main() -> None:
 
         # Final evaluation on test set
         print("\nEvaluating on test set...")
-        from chestxray.evaluation import evaluate_model
         test_results = evaluate_model(
             model=model,
             dataloader=test_loader,

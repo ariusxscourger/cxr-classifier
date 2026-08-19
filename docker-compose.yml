@@ -1,0 +1,120 @@
+version: "3.8"
+
+services:
+  # Training service
+  train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      # Mount dataset (adjust host path as needed)
+      - ./data:/app/data:ro
+      # Mount configs for easy modification
+      - ./configs:/app/configs
+      # Persist outputs and logs
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    environment:
+      - HF_HUB_OFFLINE=1
+      - WANDB_MODE=offline
+      - PYTHONUNBUFFERED=1
+    # Uncomment for GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    command: python scripts/train.py --config configs/config.yaml --device cuda
+
+  # CPU training (fallback)
+  train-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      - ./data:/app/data:ro
+      - ./configs:/app/configs
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    environment:
+      - HF_HUB_OFFLINE=1
+      - WANDB_MODE=offline
+      - PYTHONUNBUFFERED=1
+    command: python scripts/train.py --config configs/config.yaml --device cpu
+
+  # TensorBoard for visualization
+  tensorboard:
+    image: tensorflow/tensorflow:2.16.1-py3
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./logs:/logs
+    command: tensorboard --logdir /logs --host 0.0.0.0 --port 6006
+    depends_on:
+      - train
+
+  # Jupyter Lab for interactive development
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./configs:/app/configs
+      - ./src:/app/src
+      - ./data:/app/data:ro
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    environment:
+      - HF_HUB_OFFLINE=1
+      - WANDB_MODE=offline
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN:-}
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='${JUPYTER_TOKEN}' --NotebookApp.password=''
+
+  # Evaluation service
+  evaluate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      - ./data:/app/data:ro
+      - ./configs:/app/configs
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    environment:
+      - HF_HUB_OFFLINE=1
+      - WANDB_MODE=offline
+    command: python scripts/evaluate.py --config configs/config.yaml --checkpoint /app/outputs/best_model.pth --device cuda
+
+  # Inference service
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      - ./data:/app/data:ro
+      - ./configs:/app/configs
+      - ./outputs:/app/outputs
+    environment:
+      - HF_HUB_OFFLINE=1
+      - WANDB_MODE=offline
+    command: python scripts/inference.py --config configs/config.yaml --checkpoint /app/outputs/best_model.pth --image /app/data/test.jpg --device cuda

@@ -1,5 +1,5 @@
 # Chest X-Ray Classification - Configuration
-# Dataset paths
+# Dataset paths - UPDATE THIS PATH TO YOUR DATASET LOCATION
 dataset:
   data_root: "/run/media/saqib/067E00563129A4C4/Chest X-Ray"
   train_dir: "train"
@@ -16,7 +16,7 @@ dataset:
 # Model configuration
 model:
   name: "convnext_tiny"  # Options: convnext_tiny, convnext_small, efficientnet_b0, efficientnet_b3, resnet50, vit_tiny_patch16_224
-  pretrained: true
+  pretrained: false  # Set to false for fully offline training
   num_classes: 3
   drop_path_rate: 0.1
   drop_rate: 0.2
@@ -68,16 +68,18 @@ augmentation:
       contrast_limit: 0.2
       p: 0.5
     - name: "GaussNoise"
-      var_limit: [10.0, 50.0]
+      std_range: [0.1, 0.2]
       p: 0.3
     - name: "CoarseDropout"
-      max_holes: 8
-      max_height: 32
-      max_width: 32
+      num_holes_range: [1, 8]
+      hole_height_range: [0.05, 0.15]
+      hole_width_range: [0.05, 0.15]
+      fill: "random_uniform"
       p: 0.3
     - name: "Normalize"
       mean: [0.485, 0.456, 0.406]
       std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
   val:
     - name: "Resize"
       height: 224
@@ -88,6 +90,7 @@ augmentation:
     - name: "Normalize"
       mean: [0.485, 0.456, 0.406]
       std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
   test:
     - name: "Resize"
       height: 224
@@ -98,13 +101,14 @@ augmentation:
     - name: "Normalize"
       mean: [0.485, 0.456, 0.406]
       std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
 
 # Logging and monitoring
 logging:
-  use_wandb: true
+  use_wandb: false  # Disabled for fully offline/local training
   wandb_project: "chestxray-csc"
   wandb_entity: null
-  use_tensorboard: true
+  use_tensorboard: true  # Use TensorBoard (local, no account needed)
   log_dir: "logs"
   log_interval: 10
   save_dir: "outputs"

@@ -41,9 +41,9 @@ wandb/
 *.bin
 *.safetensors
 
-# Data
-data/
-datasets/
+# Data - keep data/ directory but ignore actual dataset files
+data/Chest\ X-Ray/
+data/chest-xray-dataset/
 *.csv
 *.parquet
 *.npy
@@ -57,6 +57,7 @@ datasets/
 .env
 .env.local
 *.env
+!.env.example
 
 # Coverage
 .coverage
@@ -66,7 +67,7 @@ htmlcov/
 .ruff_cache/
 
 # Pre-commit
-.pre-commit-config.yaml
+# .pre-commit-config.yaml  # Keep this file tracked
 
 # Hydra outputs
 .multirun/
@@ -80,3 +81,6 @@ tensorboard/
 tmp/
 temp/
 *.tmp
+
+# Docker
+.docker/

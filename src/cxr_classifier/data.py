@@ -16,7 +16,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from torchvision import transforms
 
-from chestxray.config import Config
+from cxr_classifier.config import Config
 
 
 class ChestXRayDataset(Dataset):

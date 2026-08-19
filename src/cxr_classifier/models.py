@@ -8,7 +8,7 @@ import torch.nn as nn
 from typing import Optional, List
 import timm
 
-from chestxray.config import Config
+from cxr_classifier.config import Config
 
 
 def create_model(config: Config) -> nn.Module:
@@ -47,15 +47,29 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
     # Find the classifier layer
     if hasattr(model, "head"):
         # ConvNeXt, EfficientNet, etc.
-        in_features = model.head.in_features
-        model.head = nn.Sequential(
-            nn.Dropout(drop_rate),
-            nn.Linear(in_features, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(drop_rate),
-            nn.Linear(512, num_classes),
-        )
+        # Check if it's a NormMlpClassifierHead (ConvNeXt style with built-in pooling)
+        if hasattr(model.head, 'fc') and hasattr(model.head, 'global_pool'):
+            # ConvNeXt style: keep the pooling, replace only the final fc layer
+            in_features = model.head.fc.in_features
+            model.head.fc = nn.Sequential(
+                nn.Dropout(drop_rate),
+                nn.Linear(in_features, 512),
+                nn.BatchNorm1d(512),
+                nn.ReLU(inplace=True),
+                nn.Dropout(drop_rate),
+                nn.Linear(512, num_classes),
+            )
+        else:
+            # Other models with simple head
+            in_features = model.head.in_features
+            model.head = nn.Sequential(
+                nn.Dropout(drop_rate),
+                nn.Linear(in_features, 512),
+                nn.BatchNorm1d(512),
+                nn.ReLU(inplace=True),
+                nn.Dropout(drop_rate),
+                nn.Linear(512, num_classes),
+            )
     elif hasattr(model, "fc"):
         # ResNet
         in_features = model.fc.in_features

@@ -1,27 +1,32 @@
 #!/usr/bin/env python3
 """
-Evaluation script for Chest X-Ray Classification.
+Evaluation script for CXR-Classifier.
 Evaluates a trained model on test set and generates comprehensive reports.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 import torch
 import yaml
 
+# Disable HF Hub and wandb network calls for fully offline operation
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["WANDB_MODE"] = "offline"
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from chestxray.config import load_config
-from chestxray.data import get_dataloaders
-from chestxray.models import create_model
-from chestxray.evaluation import evaluate_model
+from cxr_classifier.config import load_config
+from cxr_classifier.data import get_dataloaders
+from cxr_classifier.models import create_model
+from cxr_classifier.evaluation import evaluate_model
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate Chest X-Ray Classifier")
+    parser = argparse.ArgumentParser(description="Evaluate CXR-Classifier")
     parser.add_argument(
         "--config",
         type=str,

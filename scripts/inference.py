@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Inference script for Chest X-Ray Classification.
+Inference script for CXR-Classifier.
 Make predictions on new images.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -17,15 +18,19 @@ from PIL import Image
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+# Disable HF Hub and wandb network calls for fully offline operation
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["WANDB_MODE"] = "offline"
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from chestxray.config import load_config
-from chestxray.models import create_model
+from cxr_classifier.config import load_config
+from cxr_classifier.models import create_model
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Chest X-Ray Inference")
+    parser = argparse.ArgumentParser(description="CXR-Classifier Inference")
     parser.add_argument(
         "--config",
         type=str,

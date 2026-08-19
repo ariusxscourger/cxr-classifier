@@ -1,25 +1,27 @@
-# Chest X-Ray Multi-Class Classification
+# CXR-Classifier
 
+[![CI](https://github.com/ariusxscourger/cxr-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/ariusxscourger/cxr-classifier/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.4+-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/ariusxscourger/cxr-classifier/pkgs/container/cxr-classifier)
 
-> **Deep Learning Project for Chinese Government Scholarship (CSC) Application**
+> **Production-ready deep learning pipeline for chest X-ray diagnosis**
 >
-> Multi-class classification of chest X-rays: **Normal**, **Pneumonia**, and **Tuberculosis**
+> Multi-class classification: **Normal**, **Pneumonia**, and **Tuberculosis**
 
 ## 📋 Project Overview
 
-This project implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet the rigorous standards expected for **CSC (Chinese Government Scholarship)** applications and academic evaluation by professors.
+**CXR-Classifier** implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet rigorous standards for academic evaluation and scholarship applications.
 
 ### Key Highlights
 
-- **Dataset**: 23,553 chest X-ray images (20,450 train / 2,534 val / 2,569 test)
+- **Dataset**: 25,553 chest X-ray images (20,450 train / 2,534 val / 2,569 test)
 - **Classes**: Normal (9,088), Pneumonia (5,824), Tuberculosis (10,641)
 - **Architecture**: Modern CNNs (ConvNeXt, EfficientNet) and Vision Transformers (ViT, Swin)
 - **Framework**: PyTorch 2.4+ with timm, Albumentations, mixed precision
-- **Tracking**: Weights & Biases + TensorBoard experiment tracking
+- **Tracking**: TensorBoard experiment tracking
 - **Evaluation**: Comprehensive metrics (AUC, F1, Precision, Recall, ROC/PR curves, Confusion Matrix)
 
 ---
@@ -27,29 +29,42 @@ This project implements a state-of-the-art deep learning pipeline for automated 
 ## 🏗️ Project Structure
 
 ```
-ChestXRay-CSC-Project/
+cxr-classifier/
+├── .github/
+│   ├── workflows/ci.yml              # CI pipeline (multi-Python, lint, test)
+│   └── ISSUE_TEMPLATE/               # Bug & feature templates
 ├── configs/
-│   └── config.yaml                 # Main configuration (YAML)
+│   └── config.yaml                   # Main configuration (YAML)
 ├── notebooks/
-│   └── exploration.ipynb           # Interactive exploration & demo
+│   └── exploration.ipynb             # Interactive exploration & demo
 ├── scripts/
-│   ├── train.py                    # Training entry point
-│   ├── evaluate.py                 # Evaluation entry point
-│   └── inference.py                # Single image inference
+│   ├── train.py                      # Training entry point
+│   ├── evaluate.py                   # Evaluation entry point
+│   └── inference.py                  # Single image inference
 ├── src/
-│   └── chestxray/
+│   └── cxr_classifier/
 │       ├── __init__.py
-│       ├── config.py               # Configuration dataclasses
-│       ├── data.py                 # Dataset & DataLoader
-│       ├── models.py               # Model creation & modification
-│       ├── training.py             # Training loop & utilities
-│       └── evaluation.py           # Metrics & visualization
-├── outputs/                        # Model checkpoints & results
-├── logs/                           # Training logs (TensorBoard)
-├── pyproject.toml                  # Package metadata & dependencies
-├── requirements.txt                # Pip requirements
-├── .gitignore
-└── README.md                       # This file
+│       ├── config.py                 # Configuration dataclasses
+│       ├── data.py                   # Dataset & DataLoader
+│       ├── models.py                 # Model creation & modification
+│       ├── training.py               # Training loop & utilities
+│       └── evaluation.py             # Metrics & visualization
+├── outputs/                          # Model checkpoints & results
+├── logs/                             # Training logs (TensorBoard)
+├── Dockerfile                        # Production-ready container
+├── docker-compose.yml                # Multi-service orchestration
+├── .dockerignore                     # Optimized build context
+├── .env.example                      # Environment template
+├── .gitignore                        # Tracks code, ignores data/outputs
+├── pyproject.toml                    # Package metadata & dependencies
+├── requirements.txt                  # Pip requirements
+├── setup.sh                          # One-command local setup
+├── .pre-commit-config.yaml           # Code quality hooks
+├── LICENSE                           # MIT
+├── README.md                         # This file
+├── CONTRIBUTING.md                   # Contribution guidelines
+├── SECURITY.md                       # Security policy
+└── GITHUB_SETUP.md                   # GitHub setup guide
 ```
 
 ---
@@ -65,9 +80,12 @@ ChestXRay-CSC-Project/
 
 ### Installation
 
+#### Option 1: Local Development (Python)
+
 ```bash
 # Clone and navigate
-cd ~/Documents/Code/ChestXRay-CSC-Project
+git clone https://github.com/ariusxscourger/cxr-classifier.git
+cd cxr-classifier
 
 # Create virtual environment with uv (recommended)
 uv venv --python 3.11
@@ -80,9 +98,54 @@ uv pip install -e ".[dev,notebook]"
 # pip install -e ".[dev,notebook]"
 ```
 
+#### Option 2: Docker (Recommended for Reproducibility)
+
+```bash
+# Clone and navigate
+git clone https://github.com/ariusxscourger/cxr-classifier.git
+cd cxr-classifier
+
+# Download dataset from Kaggle
+# https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset
+# Extract to ./data/Chest X-Ray/
+
+# Build and run with Docker Compose
+docker compose build
+
+# For CPU training:
+docker compose up train-cpu tensorboard
+
+# For GPU training (requires nvidia-docker):
+docker compose up train tensorboard
+
+# For interactive development with Jupyter:
+docker compose up jupyter
+# Open http://localhost:8888
+
+# View logs
+docker compose logs -f train
+```
+
+**Docker Services:**
+| Service | Purpose | Ports |
+|---------|---------|-------|
+| `train` | GPU training | - |
+| `train-cpu` | CPU training | - |
+| `tensorboard` | Visualization | 6006 |
+| `jupyter` | Interactive dev | 8888 |
+| `evaluate` | Model evaluation | - |
+| `inference` | Single image prediction | - |
+
+---
+
 ### Dataset
 
-The dataset is expected at `/run/media/saqib/067E00563129A4C4/Chest X-Ray/` with structure:
+This project uses the **Chest X-Ray Dataset** from Kaggle:
+> **Dataset**: [muhammadrehan00/chest-xray-dataset](https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset)  
+> **Classes**: Normal, Pneumonia, Tuberculosis  
+> **Split**: Train / Val / Test (pre-split)
+
+Download and extract to your preferred location, then update `configs/config.yaml`:
 
 ```
 Chest X-Ray/
@@ -453,8 +516,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Albumentations** team for augmentation pipeline
 - **PyTorch** team for the framework
 - Chest X-Ray dataset contributors
-- CSC scholarship program for motivation
+- Open-source community for inspiration and tools
 
 ---
 
-**Built with ❤️ for CSC Scholarship Application 2025-2026**
+**Built with ❤️ for medical AI research and education**

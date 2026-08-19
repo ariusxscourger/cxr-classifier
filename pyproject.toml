@@ -1,7 +1,7 @@
 [project]
-name = "chestxray-csc-project"
+name = "cxr-classifier"
 version = "0.1.0"
-description = "Chest X-Ray Multi-class Classification (Normal, Pneumonia, Tuberculosis) for CSC Scholarship Application"
+description = "CXR-Classifier: Chest X-Ray Multi-class Classification (Normal, Pneumonia, Tuberculosis) - Production-ready PyTorch pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -20,10 +20,9 @@ dependencies = [
     "tqdm>=4.66.0",
     "hydra-core>=1.3.0",
     "omegaconf>=2.3.0",
-    "wandb>=0.17.0",
-    "tensorboard>=2.17.0",
     "pyyaml>=6.0.1",
     "einops>=0.8.0",
+    "tensorboard>=2.17.0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +41,9 @@ notebook = [
     "jupyter>=1.0.0",
     "ipykernel>=6.29.0",
     "ipywidgets>=8.1.0",
+]
+wandb = [
+    "wandb>=0.17.0",
 ]
 
 [build-system]
