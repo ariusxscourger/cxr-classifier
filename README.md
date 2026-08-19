@@ -13,7 +13,7 @@
 
 ## 📋 Project Overview
 
-**CXR-Classifier** implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet rigorous standards for academic and practical clinical evaluation.
+**CXR-Classifier** implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet rigorous standards for academic evaluation and professional applications.
 
 ### Key Highlights
 
@@ -141,8 +141,8 @@ docker compose logs -f train
 ### Dataset
 
 This project uses the **Chest X-Ray Dataset** from Kaggle:
-> **Dataset**: [muhammadrehan00/chest-xray-dataset](https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset)  
-> **Classes**: Normal, Pneumonia, Tuberculosis  
+> **Dataset**: [muhammadrehan00/chest-xray-dataset](https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset)
+> **Classes**: Normal, Pneumonia, Tuberculosis
 > **Split**: Train / Val / Test (pre-split)
 
 Download and extract to your preferred location, then update `configs/config.yaml`:
@@ -239,13 +239,6 @@ tensorboard --logdir logs
 # Open http://localhost:6006
 ```
 
-**Weights & Biases:**
-```bash
-# Set your API key
-wandb login
-# Dashboard at https://wandb.ai/<your-entity>/cxr-classifier
-```
-
 ### Expected Outputs
 
 ```
@@ -334,6 +327,7 @@ All class probabilities:
 | `swin_tiny_patch4_window7_224` | 28.3M | 108 MB | Hierarchical Vision Transformer |
 
 **Recommendation**: Start with `convnext_tiny` (best accuracy/efficiency balance), then try `convnext_small` or `swin_tiny` for higher performance.
+**Recommendation**: Start with `convnext_tiny` (best accuracy/efficiency balance), then try `convnext_small` or `swin_tiny` for higher performance.
 
 ---
 
@@ -349,57 +343,6 @@ python scripts/train.py --seed 42
 # - PyTorch (CPU & CUDA)
 # - cuDNN deterministic mode
 ```
-
----
-
-## 📝 Key Design & Quality Standards
-
-The implementation is designed to demonstrate best-in-class deep learning engineering practices, including:
-
-### 1. **Technical Rigor**
-- ✅ Clean, modular codebase with type hints
-- ✅ Configuration-driven experiments (YAML + Hydra-ready)
-- ✅ Proper train/val/test splits with no data leakage
-- ✅ Class imbalance handling (WeightedRandomSampler)
-- ✅ Modern architectures (ConvNeXt, ViT, Swin)
-- ✅ Advanced augmentations (Albumentations)
-- ✅ Mixed precision training (AMP)
-- ✅ Learning rate scheduling with warmup
-- ✅ Label smoothing & focal loss
-- ✅ Early stopping & model checkpointing
-- ✅ Gradient clipping for stability
-
-### 2. **Evaluation Thoroughness**
-- ✅ Per-class metrics (critical for medical imbalance)
-- ✅ Macro & weighted averages
-- ✅ ROC curves (one-vs-rest)
-- ✅ Precision-Recall curves
-- ✅ Confusion matrices (normalized & raw)
-- ✅ Classification reports
-- ✅ Training curve visualization
-
-### 3. **Experiment Tracking**
-- ✅ Weights & Biases integration
-- ✅ TensorBoard integration
-- ✅ Hyperparameter logging
-- ✅ Metric logging per batch & epoch
-- ✅ Model artifact versioning
-
-### 4. **Software Engineering**
-- ✅ Package structure (`src/chestxray/`)
-- ✅ Configuration management (dataclasses + YAML)
-- ✅ Entry point scripts (train/eval/inference)
-- ✅ Jupyter notebook for exploration
-- ✅ Type hints throughout
-- ✅ Linting (ruff, black, isort, mypy)
-- ✅ Testing ready (pytest structure)
-
-### 5. **Documentation**
-- ✅ Comprehensive README (this file)
-- ✅ Inline docstrings (Google style)
-- ✅ Configuration documentation
-- ✅ Usage examples
-- ✅ Architecture decision rationale
 
 ---
 
@@ -448,42 +391,6 @@ The implementation is designed to demonstrate best-in-class deep learning engine
 ---
 
 ## 📚 References
-
-1. **ConvNeXt**: Liu et al., "A ConvNet for the 2020s", CVPR 2022
-2. **EfficientNet**: Tan & Le, "EfficientNet: Rethinking Model Scaling", ICML 2019
-3. **Vision Transformer**: Dosovitskiy et al., "An Image is Worth 16x16 Words", ICLR 2021
-4. **Swin Transformer**: Liu et al., "Swin Transformer: Hierarchical Vision Transformer", ICCV 2021
-5. **Label Smoothing**: Szegedy et al., "Rethinking the Inception Architecture", CVPR 2016
-6. **Focal Loss**: Lin et al., "Focal Loss for Dense Object Detection", ICCV 2017
-7. **Albumentations**: Buslaev et al., "Albumentations: Fast and Flexible Image Augmentations", Information 2020
-
----
-
-## 🎓 Academic Use
-
-This project is suitable for:
-- **Master's/PhD Research Portfolio**
-- **Medical AI Course Projects**
-- **Conference Paper Implementation** (MICCAI, MIDL, CVPR workshops)
-
-### Citation
-
-If you use this codebase for academic work, please cite:
-
-```bibtex
-@software{cxr_classifier_2025,
-  author = {Muhammad Saqib},
-  title = {Chest X-Ray Multi-Class Classification Pipeline},
-  year = {2025},
-  url = {https://github.com/yourusername/cxr-classifier}
-}
-```
-
----
-
-## 🤝 Contributing
-
-This is an academic project. However, improvements are welcome:
 
 1. Fork the repository
 2. Create a feature branch

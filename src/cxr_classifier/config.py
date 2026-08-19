@@ -4,19 +4,21 @@ Configuration management for Chest X-Ray Classification.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+
 import yaml
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import OmegaConf
 
 
 @dataclass
 class DatasetConfig:
     """Dataset configuration."""
+
     data_root: str
     train_dir: str = "train"
     val_dir: str = "val"
     test_dir: str = "test"
-    classes: List[str] = field(default_factory=lambda: ["normal", "pneumonia", "tuberculosis"])
+    classes: list[str] = field(default_factory=lambda: ["normal", "pneumonia", "tuberculosis"])
     num_classes: int = 3
     image_size: int = 224
     batch_size: int = 32
@@ -36,6 +38,7 @@ class DatasetConfig:
 @dataclass
 class ModelConfig:
     """Model configuration."""
+
     name: str = "convnext_tiny"
     pretrained: bool = True
     num_classes: int = 3
@@ -52,10 +55,11 @@ class ModelConfig:
 @dataclass
 class OptimizerConfig:
     """Optimizer configuration."""
+
     name: str = "adamw"
     lr: float = 1e-4
     weight_decay: float = 0.05
-    betas: List[float] = field(default_factory=lambda: [0.9, 0.999])
+    betas: list[float] = field(default_factory=lambda: [0.9, 0.999])
     eps: float = 1e-8
 
     def __post_init__(self) -> None:
@@ -69,6 +73,7 @@ class OptimizerConfig:
 @dataclass
 class SchedulerConfig:
     """Learning rate scheduler configuration."""
+
     name: str = "cosine_annealing_warm_restarts"
     t_0: int = 10
     t_mult: int = 2
@@ -87,6 +92,7 @@ class SchedulerConfig:
 @dataclass
 class LossConfig:
     """Loss function configuration."""
+
     name: str = "label_smoothing_cross_entropy"
     label_smoothing: float = 0.1
 
@@ -97,6 +103,7 @@ class LossConfig:
 @dataclass
 class EarlyStoppingConfig:
     """Early stopping configuration."""
+
     patience: int = 15
     min_delta: float = 1e-4
     mode: str = "max"
@@ -109,6 +116,7 @@ class EarlyStoppingConfig:
 @dataclass
 class TrainingConfig:
     """Training configuration."""
+
     epochs: int = 100
     optimizer: OptimizerConfig = field(default_factory=OptimizerConfig)
     scheduler: SchedulerConfig = field(default_factory=SchedulerConfig)
@@ -130,17 +138,19 @@ class TrainingConfig:
 @dataclass
 class AugmentationConfig:
     """Augmentation configuration."""
-    train: List[Dict[str, Any]] = field(default_factory=list)
-    val: List[Dict[str, Any]] = field(default_factory=list)
-    test: List[Dict[str, Any]] = field(default_factory=list)
+
+    train: list[dict[str, Any]] = field(default_factory=list)
+    val: list[dict[str, Any]] = field(default_factory=list)
+    test: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
 class LoggingConfig:
     """Logging configuration."""
+
     use_wandb: bool = True
     wandb_project: str = "cxr-classifier"
-    wandb_entity: Optional[str] = None
+    wandb_entity: str | None = None
     use_tensorboard: bool = True
     log_dir: str = "logs"
     log_interval: int = 10
@@ -157,13 +167,17 @@ class LoggingConfig:
 @dataclass
 class EvaluationConfig:
     """Evaluation configuration."""
-    metrics: List[str] = field(default_factory=lambda: ["accuracy", "precision", "recall", "f1", "auc", "confusion_matrix"])
-    class_names: List[str] = field(default_factory=lambda: ["Normal", "Pneumonia", "Tuberculosis"])
+
+    metrics: list[str] = field(
+        default_factory=lambda: ["accuracy", "precision", "recall", "f1", "auc", "confusion_matrix"]
+    )
+    class_names: list[str] = field(default_factory=lambda: ["Normal", "Pneumonia", "Tuberculosis"])
 
 
 @dataclass
 class HardwareConfig:
     """Hardware configuration."""
+
     device: str = "cpu"
     mixed_precision: bool = True
     compile_model: bool = False
@@ -176,6 +190,7 @@ class HardwareConfig:
 @dataclass
 class Config:
     """Main configuration class."""
+
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
@@ -185,25 +200,30 @@ class Config:
     hardware: HardwareConfig = field(default_factory=HardwareConfig)
 
     @classmethod
-    def from_yaml(cls, path: Union[str, Path]) -> "Config":
+    def from_yaml(cls, path: str | Path) -> "Config":
         """Load configuration from YAML file."""
-        with open(path, "r") as f:
+        with open(path) as f:
             cfg_dict = yaml.safe_load(f)
         return cls.from_dict(cfg_dict)
 
     @classmethod
-    def from_dict(cls, cfg_dict: Dict[str, Any]) -> "Config":
+    def from_dict(cls, cfg_dict: dict[str, Any]) -> "Config":
         """Create Config from dictionary."""
         return cls(
             dataset=DatasetConfig(**cfg_dict.get("dataset", {})),
             model=ModelConfig(**cfg_dict.get("model", {})),
             training=TrainingConfig(
-                **{k: v for k, v in cfg_dict.get("training", {}).items() 
-                   if k not in ["optimizer", "scheduler", "loss", "early_stopping"]},
+                **{
+                    k: v
+                    for k, v in cfg_dict.get("training", {}).items()
+                    if k not in ["optimizer", "scheduler", "loss", "early_stopping"]
+                },
                 optimizer=OptimizerConfig(**cfg_dict.get("training", {}).get("optimizer", {})),
                 scheduler=SchedulerConfig(**cfg_dict.get("training", {}).get("scheduler", {})),
                 loss=LossConfig(**cfg_dict.get("training", {}).get("loss", {})),
-                early_stopping=EarlyStoppingConfig(**cfg_dict.get("training", {}).get("early_stopping", {})),
+                early_stopping=EarlyStoppingConfig(
+                    **cfg_dict.get("training", {}).get("early_stopping", {})
+                ),
             ),
             augmentation=AugmentationConfig(**cfg_dict.get("augmentation", {})),
             logging=LoggingConfig(**cfg_dict.get("logging", {})),
@@ -211,16 +231,16 @@ class Config:
             hardware=HardwareConfig(**cfg_dict.get("hardware", {})),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary."""
         return OmegaConf.to_container(OmegaConf.structured(self), resolve=True)
 
-    def save(self, path: Union[str, Path]) -> None:
+    def save(self, path: str | Path) -> None:
         """Save configuration to YAML file."""
         with open(path, "w") as f:
             yaml.dump(self.to_dict(), f, default_flow_style=False)
 
 
-def load_config(path: Union[str, Path]) -> Config:
+def load_config(path: str | Path) -> Config:
     """Load configuration from YAML file."""
     return Config.from_yaml(path)

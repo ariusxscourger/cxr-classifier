@@ -3,43 +3,42 @@ Evaluation module for Chest X-Ray Classification.
 Computes comprehensive metrics and generates visualizations.
 """
 
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 from sklearn.metrics import (
     accuracy_score,
+    auc,
+    average_precision_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_recall_curve,
     precision_score,
     recall_score,
-    f1_score,
     roc_auc_score,
-    confusion_matrix,
-    classification_report,
     roc_curve,
-    auc,
-    precision_recall_curve,
-    average_precision_score,
 )
-import seaborn as sns
 
 
 class Evaluator:
     """Comprehensive evaluation for multi-class classification."""
 
-    def __init__(self, class_names: List[str], device: torch.device):
+    def __init__(self, class_names: list[str], device: torch.device):
         self.class_names = class_names
         self.num_classes = len(class_names)
         self.device = device
 
     def compute_metrics(
         self,
-        targets: List[int],
-        predictions: List[int],
-        probabilities: List[np.ndarray],
-    ) -> Dict[str, float]:
+        targets: list[int],
+        predictions: list[int],
+        probabilities: list[np.ndarray],
+    ) -> dict[str, float]:
         """
         Compute all evaluation metrics.
 
@@ -61,18 +60,32 @@ class Evaluator:
         metrics["accuracy"] = accuracy_score(targets, predictions)
 
         # Per-class metrics
-        metrics["precision_per_class"] = precision_score(targets, predictions, average=None, zero_division=0).tolist()
-        metrics["recall_per_class"] = recall_score(targets, predictions, average=None, zero_division=0).tolist()
-        metrics["f1_per_class"] = f1_score(targets, predictions, average=None, zero_division=0).tolist()
+        metrics["precision_per_class"] = precision_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
+        metrics["recall_per_class"] = recall_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
+        metrics["f1_per_class"] = f1_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
 
         # Macro averages (equally weight each class)
-        metrics["precision_macro"] = precision_score(targets, predictions, average="macro", zero_division=0)
-        metrics["recall_macro"] = recall_score(targets, predictions, average="macro", zero_division=0)
+        metrics["precision_macro"] = precision_score(
+            targets, predictions, average="macro", zero_division=0
+        )
+        metrics["recall_macro"] = recall_score(
+            targets, predictions, average="macro", zero_division=0
+        )
         metrics["f1_macro"] = f1_score(targets, predictions, average="macro", zero_division=0)
 
         # Weighted averages (weight by support)
-        metrics["precision_weighted"] = precision_score(targets, predictions, average="weighted", zero_division=0)
-        metrics["recall_weighted"] = recall_score(targets, predictions, average="weighted", zero_division=0)
+        metrics["precision_weighted"] = precision_score(
+            targets, predictions, average="weighted", zero_division=0
+        )
+        metrics["recall_weighted"] = recall_score(
+            targets, predictions, average="weighted", zero_division=0
+        )
         metrics["f1_weighted"] = f1_score(targets, predictions, average="weighted", zero_division=0)
 
         # AUC metrics (one-vs-rest)
@@ -121,8 +134,8 @@ class Evaluator:
 
     def get_confusion_matrix(
         self,
-        targets: List[int],
-        predictions: List[int],
+        targets: list[int],
+        predictions: list[int],
         normalize: str = "true",
     ) -> np.ndarray:
         """Compute confusion matrix."""
@@ -139,11 +152,11 @@ class Evaluator:
 
     def plot_confusion_matrix(
         self,
-        targets: List[int],
-        predictions: List[int],
-        save_path: Optional[str] = None,
+        targets: list[int],
+        predictions: list[int],
+        save_path: str | None = None,
         normalize: str = "true",
-        figsize: Tuple[int, int] = (8, 6),
+        figsize: tuple[int, int] = (8, 6),
     ) -> plt.Figure:
         """Plot confusion matrix."""
         cm = self.get_confusion_matrix(targets, predictions, normalize=normalize)
@@ -172,10 +185,10 @@ class Evaluator:
 
     def plot_roc_curves(
         self,
-        targets: List[int],
-        probabilities: List[np.ndarray],
-        save_path: Optional[str] = None,
-        figsize: Tuple[int, int] = (8, 6),
+        targets: list[int],
+        probabilities: list[np.ndarray],
+        save_path: str | None = None,
+        figsize: tuple[int, int] = (8, 6),
     ) -> plt.Figure:
         """Plot ROC curves for each class."""
         targets = np.array(targets)
@@ -205,10 +218,10 @@ class Evaluator:
 
     def plot_precision_recall_curves(
         self,
-        targets: List[int],
-        probabilities: List[np.ndarray],
-        save_path: Optional[str] = None,
-        figsize: Tuple[int, int] = (8, 6),
+        targets: list[int],
+        probabilities: list[np.ndarray],
+        save_path: str | None = None,
+        figsize: tuple[int, int] = (8, 6),
     ) -> plt.Figure:
         """Plot Precision-Recall curves for each class."""
         targets = np.array(targets)
@@ -237,12 +250,12 @@ class Evaluator:
 
     def plot_training_curves(
         self,
-        train_losses: List[float],
-        val_losses: List[float],
-        val_metrics: List[Dict[str, float]],
-        learning_rates: List[float],
-        save_path: Optional[str] = None,
-        figsize: Tuple[int, int] = (15, 10),
+        train_losses: list[float],
+        val_losses: list[float],
+        val_metrics: list[dict[str, float]],
+        learning_rates: list[float],
+        save_path: str | None = None,
+        figsize: tuple[int, int] = (15, 10),
     ) -> plt.Figure:
         """Plot training curves."""
         epochs = range(1, len(train_losses) + 1)
@@ -297,7 +310,7 @@ class Evaluator:
 
         # Per-class F1
         for i, class_name in enumerate(self.class_names):
-            class_f1 = [m.get("f1_per_class", [0]*self.num_classes)[i] for m in val_metrics]
+            class_f1 = [m.get("f1_per_class", [0] * self.num_classes)[i] for m in val_metrics]
             axes[5].plot(epochs, class_f1, label=class_name)
         axes[5].set_xlabel("Epoch")
         axes[5].set_ylabel("F1 Score")
@@ -312,9 +325,9 @@ class Evaluator:
 
     def generate_classification_report(
         self,
-        targets: List[int],
-        predictions: List[int],
-        save_path: Optional[str] = None,
+        targets: list[int],
+        predictions: list[int],
+        save_path: str | None = None,
     ) -> str:
         """Generate detailed classification report."""
         report = classification_report(
@@ -333,7 +346,7 @@ class Evaluator:
 
     def save_metrics(
         self,
-        metrics: Dict[str, float],
+        metrics: dict[str, float],
         save_path: str,
     ) -> None:
         """Save metrics to JSON file."""
@@ -356,7 +369,7 @@ class Evaluator:
         with open(save_path, "w") as f:
             json.dump(metrics, f, indent=2)
 
-    def print_metrics(self, metrics: Dict[str, float]) -> None:
+    def print_metrics(self, metrics: dict[str, float]) -> None:
         """Print metrics in a formatted way."""
         print("\n" + "=" * 60)
         print("EVALUATION METRICS")
@@ -382,9 +395,9 @@ def evaluate_model(
     model: torch.nn.Module,
     dataloader: torch.utils.data.DataLoader,
     device: torch.device,
-    class_names: List[str],
-    save_dir: Optional[str] = None,
-) -> Dict[str, Any]:
+    class_names: list[str],
+    save_dir: str | None = None,
+) -> dict[str, Any]:
     """
     Complete model evaluation pipeline.
 
@@ -467,5 +480,6 @@ def evaluate_model(
 try:
     from tqdm import tqdm
 except ImportError:
+
     def tqdm(iterable, desc=""):
         return iterable

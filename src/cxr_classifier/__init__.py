@@ -12,9 +12,9 @@ __description__ = "CXR-Classifier: Chest X-Ray Multi-class Classification"
 
 from cxr_classifier.config import Config, load_config
 from cxr_classifier.data import ChestXRayDataset, get_dataloaders
+from cxr_classifier.evaluation import Evaluator
 from cxr_classifier.models import create_model
 from cxr_classifier.training import Trainer
-from cxr_classifier.evaluation import Evaluator
 
 __all__ = [
     "Config",

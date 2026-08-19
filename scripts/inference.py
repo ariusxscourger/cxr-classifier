@@ -9,14 +9,13 @@ import os
 import sys
 from pathlib import Path
 
-import torch
-import torch.nn.functional as F
+import albumentations as A
 import cv2
 import numpy as np
-from PIL import Image
-
-import albumentations as A
+import torch
+import torch.nn.functional as F
 from albumentations.pytorch import ToTensorV2
+from PIL import Image
 
 # Disable HF Hub and wandb network calls for fully offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -109,11 +108,13 @@ def main() -> None:
     config.hardware.device = str(device)
 
     # Build test transform
-    test_transform = A.Compose([
-        A.Resize(config.dataset.image_size, config.dataset.image_size),
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2(),
-    ])
+    test_transform = A.Compose(
+        [
+            A.Resize(config.dataset.image_size, config.dataset.image_size),
+            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ToTensorV2(),
+        ]
+    )
 
     # Create model
     print("\nCreating model...")
@@ -152,13 +153,13 @@ def main() -> None:
     print("=" * 50)
     for i, (idx, prob) in enumerate(zip(indices, probs)):
         class_name = config.evaluation.class_names[idx]
-        print(f"  {i+1}. {class_name}: {prob*100:.2f}%")
+        print(f"  {i + 1}. {class_name}: {prob * 100:.2f}%")
 
     # All class probabilities
     all_probs = probabilities.cpu().numpy()[0]
     print("\nAll class probabilities:")
     for i, class_name in enumerate(config.evaluation.class_names):
-        print(f"  {class_name}: {all_probs[i]*100:.2f}%")
+        print(f"  {class_name}: {all_probs[i] * 100:.2f}%")
 
     print("=" * 50)
 

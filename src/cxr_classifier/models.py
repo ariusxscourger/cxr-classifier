@@ -3,10 +3,9 @@ Model architectures for Chest X-Ray Classification.
 Supports modern CNN and Vision Transformer models via timm.
 """
 
-import torch
-import torch.nn as nn
-from typing import Optional, List
 import timm
+import torch
+from torch import nn
 
 from cxr_classifier.config import Config
 
@@ -48,7 +47,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
     if hasattr(model, "head"):
         # ConvNeXt, EfficientNet, etc.
         # Check if it's a NormMlpClassifierHead (ConvNeXt style with built-in pooling)
-        if hasattr(model.head, 'fc') and hasattr(model.head, 'global_pool'):
+        if hasattr(model.head, "fc") and hasattr(model.head, "global_pool"):
             # ConvNeXt style: keep the pooling, replace only the final fc layer
             in_features = model.head.fc.in_features
             model.head.fc = nn.Sequential(
@@ -119,7 +118,7 @@ def get_model_info(model: nn.Module) -> dict:
     return {
         "total_parameters": total_params,
         "trainable_parameters": trainable_params,
-        "model_size_mb": total_params * 4 / (1024 ** 2),  # Assuming float32
+        "model_size_mb": total_params * 4 / (1024**2),  # Assuming float32
     }
 
 
@@ -143,7 +142,7 @@ def unfreeze_all(model: nn.Module) -> nn.Module:
 class ModelEnsemble(nn.Module):
     """Ensemble of multiple models."""
 
-    def __init__(self, models: List[nn.Module], weights: Optional[List[float]] = None):
+    def __init__(self, models: list[nn.Module], weights: list[float] | None = None):
         super().__init__()
         self.models = nn.ModuleList(models)
         self.weights = weights or [1.0 / len(models)] * len(models)
@@ -155,7 +154,7 @@ class ModelEnsemble(nn.Module):
         return torch.stack(outputs).sum(dim=0)
 
 
-def create_ensemble(config: Config, model_names: List[str]) -> ModelEnsemble:
+def create_ensemble(config: Config, model_names: list[str]) -> ModelEnsemble:
     """Create an ensemble of models."""
     models = []
     for name in model_names:

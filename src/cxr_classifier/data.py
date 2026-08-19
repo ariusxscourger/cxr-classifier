@@ -3,9 +3,9 @@ Data module for Chest X-Ray Classification.
 Handles dataset loading, augmentation, and dataloader creation.
 """
 
-import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import albumentations as A
 import cv2
@@ -14,7 +14,6 @@ import torch
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
-from torchvision import transforms
 
 from cxr_classifier.config import Config
 
@@ -24,10 +23,10 @@ class ChestXRayDataset(Dataset):
 
     def __init__(
         self,
-        data_root: Union[str, Path],
+        data_root: str | Path,
         split: str,
-        classes: List[str],
-        transform: Optional[Callable] = None,
+        classes: list[str],
+        transform: Callable | None = None,
         image_size: int = 224,
     ):
         """
@@ -49,7 +48,7 @@ class ChestXRayDataset(Dataset):
 
         self.samples = self._load_samples()
 
-    def _load_samples(self) -> List[Tuple[Path, int]]:
+    def _load_samples(self) -> list[tuple[Path, int]]:
         """Load all sample paths and labels."""
         samples = []
         split_dir = self.data_root / self.split
@@ -70,7 +69,7 @@ class ChestXRayDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
         img_path, label = self.samples[idx]
 
         # Load image
@@ -93,11 +92,13 @@ class ChestXRayDataset(Dataset):
 
     def _default_transform(self, image: np.ndarray) -> torch.Tensor:
         """Default transform if none provided."""
-        transform = A.Compose([
-            A.Resize(self.image_size, self.image_size),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(self.image_size, self.image_size),
+                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ToTensorV2(),
+            ]
+        )
         return transform(image=image)["image"]
 
     def get_class_weights(self) -> torch.Tensor:
@@ -111,13 +112,13 @@ class ChestXRayDataset(Dataset):
         weights = weights / weights.sum() * len(self.classes)
         return torch.tensor(weights, dtype=torch.float32)
 
-    def get_sample_weights(self) -> List[float]:
+    def get_sample_weights(self) -> list[float]:
         """Get per-sample weights for WeightedRandomSampler."""
         class_weights = self.get_class_weights()
         return [class_weights[label].item() for _, label in self.samples]
 
 
-def build_augmentation_pipeline(cfg: Dict[str, Any]) -> A.Compose:
+def build_augmentation_pipeline(cfg: dict[str, Any]) -> A.Compose:
     """Build Albumentations pipeline from config."""
     transforms_list = []
 
@@ -163,7 +164,7 @@ def build_augmentation_pipeline(cfg: Dict[str, Any]) -> A.Compose:
     return A.Compose(transforms_list)
 
 
-def get_dataloaders(config: Config) -> Tuple[DataLoader, DataLoader, DataLoader]:
+def get_dataloaders(config: Config) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Create train, validation, and test dataloaders.
 
@@ -240,9 +241,9 @@ def get_dataloaders(config: Config) -> Tuple[DataLoader, DataLoader, DataLoader]
     return train_loader, val_loader, test_loader
 
 
-def get_class_distribution(dataset: ChestXRayDataset) -> Dict[str, int]:
+def get_class_distribution(dataset: ChestXRayDataset) -> dict[str, int]:
     """Get class distribution for a dataset."""
-    distribution = {cls: 0 for cls in dataset.classes}
+    distribution = dict.fromkeys(dataset.classes, 0)
     for _, label in dataset.samples:
         distribution[dataset.classes[label]] += 1
     return distribution

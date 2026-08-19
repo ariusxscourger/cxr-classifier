@@ -3,15 +3,14 @@ Training module for Chest X-Ray Classification.
 Handles training loop, validation, checkpointing, and logging.
 """
 
-import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from torch.amp import GradScaler, autocast
+from torch import nn
+from torch.cuda.amp import GradScaler, autocast
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
@@ -89,10 +88,10 @@ class Trainer:
         self.save_top_k = config.training.save_top_k
 
         # Metrics tracking
-        self.train_losses: List[float] = []
-        self.val_losses: List[float] = []
-        self.val_metrics: List[Dict[str, float]] = []
-        self.learning_rates: List[float] = []
+        self.train_losses: list[float] = []
+        self.val_losses: list[float] = []
+        self.val_metrics: list[dict[str, float]] = []
+        self.learning_rates: list[float] = []
 
         # WandB and TensorBoard
         self.use_wandb = config.logging.use_wandb
@@ -120,10 +119,14 @@ class Trainer:
     def _create_optimizer(self, opt_config) -> Optimizer:
         """Create optimizer."""
         lr = float(opt_config.lr) if isinstance(opt_config.lr, str) else opt_config.lr
-        weight_decay = float(opt_config.weight_decay) if isinstance(opt_config.weight_decay, str) else opt_config.weight_decay
+        weight_decay = (
+            float(opt_config.weight_decay)
+            if isinstance(opt_config.weight_decay, str)
+            else opt_config.weight_decay
+        )
         eps = float(opt_config.eps) if isinstance(opt_config.eps, str) else opt_config.eps
         betas = opt_config.betas if isinstance(opt_config.betas, list) else [0.9, 0.999]
-        
+
         if opt_config.name == "adamw":
             return torch.optim.AdamW(
                 self.model.parameters(),
@@ -141,7 +144,11 @@ class Trainer:
                 eps=eps,
             )
         elif opt_config.name == "sgd":
-            momentum = float(opt_config.momentum) if hasattr(opt_config, 'momentum') and isinstance(opt_config.momentum, str) else 0.9
+            momentum = (
+                float(opt_config.momentum)
+                if hasattr(opt_config, "momentum") and isinstance(opt_config.momentum, str)
+                else 0.9
+            )
             return torch.optim.SGD(
                 self.model.parameters(),
                 lr=lr,
@@ -154,11 +161,27 @@ class Trainer:
 
     def _create_scheduler(self, sched_config) -> _LRScheduler:
         """Create learning rate scheduler."""
-        eta_min = float(sched_config.eta_min) if isinstance(sched_config.eta_min, str) else sched_config.eta_min
-        warmup_lr = float(sched_config.warmup_lr) if isinstance(sched_config.warmup_lr, str) else sched_config.warmup_lr
+        eta_min = (
+            float(sched_config.eta_min)
+            if isinstance(sched_config.eta_min, str)
+            else sched_config.eta_min
+        )
+        warmup_lr = (
+            float(sched_config.warmup_lr)
+            if isinstance(sched_config.warmup_lr, str)
+            else sched_config.warmup_lr
+        )
         t_0 = int(sched_config.t_0) if isinstance(sched_config.t_0, str) else sched_config.t_0
-        t_mult = int(sched_config.t_mult) if isinstance(sched_config.t_mult, str) else sched_config.t_mult
-        warmup_epochs = int(sched_config.warmup_epochs) if isinstance(sched_config.warmup_epochs, str) else sched_config.warmup_epochs
+        t_mult = (
+            int(sched_config.t_mult)
+            if isinstance(sched_config.t_mult, str)
+            else sched_config.t_mult
+        )
+        warmup_epochs = (
+            int(sched_config.warmup_epochs)
+            if isinstance(sched_config.warmup_epochs, str)
+            else sched_config.warmup_epochs
+        )
 
         if sched_config.name == "cosine_annealing_warm_restarts":
             base_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
@@ -205,12 +228,13 @@ class Trainer:
         if self.use_wandb:
             try:
                 import wandb
+
                 self.wandb_run = wandb.init(
                     project=config.logging.wandb_project,
                     entity=config.logging.wandb_entity,
                     config=config.to_dict(),
                     dir=str(self.log_dir),
-                    mode="offline"  # Works without internet
+                    mode="offline",  # Works without internet
                 )
             except Exception as e:
                 print(f"Warning: Failed to initialize wandb: {e}")
@@ -219,12 +243,13 @@ class Trainer:
         if self.use_tensorboard:
             try:
                 from torch.utils.tensorboard import SummaryWriter
+
                 self.tb_writer = SummaryWriter(log_dir=str(self.log_dir / "tensorboard"))
             except Exception as e:
                 print(f"Warning: Failed to initialize tensorboard: {e}")
                 self.use_tensorboard = False
 
-    def train_epoch(self, epoch: int) -> Dict[str, float]:
+    def train_epoch(self, epoch: int) -> dict[str, float]:
         """Train for one epoch."""
         self.model.train()
         total_loss = 0.0
@@ -262,10 +287,12 @@ class Trainer:
             correct += predicted.eq(targets).sum().item()
 
             # Update progress bar
-            pbar.set_postfix({
-                "loss": f"{total_loss / (batch_idx + 1):.4f}",
-                "acc": f"{100.0 * correct / total:.2f}%",
-            })
+            pbar.set_postfix(
+                {
+                    "loss": f"{total_loss / (batch_idx + 1):.4f}",
+                    "acc": f"{100.0 * correct / total:.2f}%",
+                }
+            )
 
             # Log batch metrics
             if batch_idx % self.log_interval == 0:
@@ -276,7 +303,7 @@ class Trainer:
 
         return {"loss": avg_loss, "accuracy": accuracy}
 
-    def validate(self, epoch: int) -> Dict[str, float]:
+    def validate(self, epoch: int) -> dict[str, float]:
         """Validate the model."""
         self.model.eval()
         total_loss = 0.0
@@ -304,9 +331,7 @@ class Trainer:
         avg_loss = total_loss / len(self.val_loader)
 
         # Compute metrics
-        metrics = self.evaluator.compute_metrics(
-            all_targets, all_preds, all_probs
-        )
+        metrics = self.evaluator.compute_metrics(all_targets, all_preds, all_probs)
         metrics["loss"] = avg_loss
 
         return metrics
@@ -317,21 +342,28 @@ class Trainer:
 
         if self.use_wandb and self.wandb_run:
             import wandb
-            wandb.log({
-                "train/batch_loss": loss,
-                "train/batch_accuracy": accuracy,
-                "train/learning_rate": self.optimizer.param_groups[0]["lr"],
-            }, step=step)
+
+            wandb.log(
+                {
+                    "train/batch_loss": loss,
+                    "train/batch_accuracy": accuracy,
+                    "train/learning_rate": self.optimizer.param_groups[0]["lr"],
+                },
+                step=step,
+            )
 
         if self.use_tensorboard and self.tb_writer:
             self.tb_writer.add_scalar("train/batch_loss", loss, step)
             self.tb_writer.add_scalar("train/batch_accuracy", accuracy, step)
-            self.tb_writer.add_scalar("train/learning_rate", self.optimizer.param_groups[0]["lr"], step)
+            self.tb_writer.add_scalar(
+                "train/learning_rate", self.optimizer.param_groups[0]["lr"], step
+            )
 
-    def _log_epoch(self, epoch: int, train_metrics: Dict, val_metrics: Dict) -> None:
+    def _log_epoch(self, epoch: int, train_metrics: dict, val_metrics: dict) -> None:
         """Log epoch metrics."""
         if self.use_wandb and self.wandb_run:
             import wandb
+
             log_dict = {
                 "epoch": epoch,
                 "train/loss": train_metrics["loss"],
@@ -351,7 +383,9 @@ class Trainer:
             self.tb_writer.add_scalar("train/accuracy", train_metrics["accuracy"], epoch)
             self.tb_writer.add_scalar("val/loss", val_metrics["loss"], epoch)
             self.tb_writer.add_scalar("val/accuracy", val_metrics.get("accuracy", 0), epoch)
-            self.tb_writer.add_scalar("val/precision_macro", val_metrics.get("precision_macro", 0), epoch)
+            self.tb_writer.add_scalar(
+                "val/precision_macro", val_metrics.get("precision_macro", 0), epoch
+            )
             self.tb_writer.add_scalar("val/recall_macro", val_metrics.get("recall_macro", 0), epoch)
             self.tb_writer.add_scalar("val/f1_macro", val_metrics.get("f1_macro", 0), epoch)
             self.tb_writer.add_scalar("val/auc_macro", val_metrics.get("auc_macro", 0), epoch)
@@ -372,7 +406,7 @@ class Trainer:
             self.early_stopping_counter += 1
             return self.early_stopping_counter >= self.early_stopping_patience
 
-    def _save_checkpoint(self, epoch: int, metrics: Dict, is_best: bool = False) -> None:
+    def _save_checkpoint(self, epoch: int, metrics: dict, is_best: bool = False) -> None:
         """Save model checkpoint."""
         checkpoint = {
             "epoch": epoch,
@@ -399,12 +433,12 @@ class Trainer:
         if self.save_top_k > 0:
             self._manage_top_k_checkpoints(epoch, metrics)
 
-    def _manage_top_k_checkpoints(self, epoch: int, metrics: Dict) -> None:
+    def _manage_top_k_checkpoints(self, epoch: int, metrics: dict) -> None:
         """Manage top-k checkpoints."""
         # Simple implementation: keep track of best k epochs
         pass  # Implement based on needs
 
-    def train(self) -> Dict[str, Any]:
+    def train(self) -> dict[str, Any]:
         """Main training loop."""
         print(f"Starting training on {self.device}")
         print(f"Model: {self.config.model.name}")
@@ -439,12 +473,14 @@ class Trainer:
 
             # Print progress
             epoch_time = time.time() - epoch_start
-            print(f"Epoch {epoch}/{self.config.training.epochs} - "
-                  f"Train Loss: {train_metrics['loss']:.4f}, Train Acc: {train_metrics['accuracy']:.2f}% | "
-                  f"Val Loss: {val_metrics['loss']:.4f}, Val Acc: {val_metrics.get('accuracy', 0):.2f}% | "
-                  f"Val F1: {val_metrics.get('f1_macro', 0):.4f} | "
-                  f"LR: {self.optimizer.param_groups[0]['lr']:.2e} | "
-                  f"Time: {epoch_time:.1f}s")
+            print(
+                f"Epoch {epoch}/{self.config.training.epochs} - "
+                f"Train Loss: {train_metrics['loss']:.4f}, Train Acc: {train_metrics['accuracy']:.2f}% | "
+                f"Val Loss: {val_metrics['loss']:.4f}, Val Acc: {val_metrics.get('accuracy', 0):.2f}% | "
+                f"Val F1: {val_metrics.get('f1_macro', 0):.4f} | "
+                f"LR: {self.optimizer.param_groups[0]['lr']:.2e} | "
+                f"Time: {epoch_time:.1f}s"
+            )
 
             # Check early stopping
             monitor_metric = val_metrics.get("f1_macro", val_metrics.get("accuracy", 0))
@@ -462,15 +498,19 @@ class Trainer:
 
         # Save final model
         final_path = self.save_dir / "final_model.pth"
-        torch.save({
-            "model_state_dict": self.model.state_dict(),
-            "config": self.config.to_dict(),
-            "final_metrics": val_metrics,
-        }, final_path)
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "config": self.config.to_dict(),
+                "final_metrics": val_metrics,
+            },
+            final_path,
+        )
 
         # Close loggers
         if self.use_wandb and self.wandb_run:
             import wandb
+
             wandb.finish()
         if self.use_tensorboard and self.tb_writer:
             self.tb_writer.close()
@@ -511,13 +551,13 @@ class WarmupScheduler:
             self.base_scheduler.step()
         self.current_epoch += 1
 
-    def state_dict(self) -> Dict:
+    def state_dict(self) -> dict:
         return {
             "base_scheduler": self.base_scheduler.state_dict(),
             "current_epoch": self.current_epoch,
         }
 
-    def load_state_dict(self, state_dict: Dict) -> None:
+    def load_state_dict(self, state_dict: dict) -> None:
         self.base_scheduler.load_state_dict(state_dict["base_scheduler"])
         self.current_epoch = state_dict["current_epoch"]
 
