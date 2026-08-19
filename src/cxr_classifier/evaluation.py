@@ -148,20 +148,22 @@ class Evaluator:
         """Plot confusion matrix."""
         cm = self.get_confusion_matrix(targets, predictions, normalize=normalize)
 
+        normalized = normalize is not None and normalize != "none"
         fig, ax = plt.subplots(figsize=figsize)
         sns.heatmap(
             cm,
             annot=True,
-            fmt=".2f" if normalize else "d",
+            fmt=".2f" if normalized else "d",
             cmap="Blues",
             xticklabels=self.class_names,
             yticklabels=self.class_names,
             ax=ax,
-            cbar_kws={"label": "Normalized Frequency" if normalize else "Count"},
+            cbar_kws={"label": "Normalized Frequency" if normalized else "Count"},
         )
         ax.set_xlabel("Predicted Label")
         ax.set_ylabel("True Label")
-        ax.set_title(f"Confusion Matrix ({normalize.capitalize()})")
+        normalize_label = normalize.capitalize() if normalize else "Raw"
+        ax.set_title(f"Confusion Matrix ({normalize_label})")
 
         plt.tight_layout()
         if save_path:
@@ -445,7 +447,7 @@ def evaluate_model(
             all_targets, all_predictions, save_dir / "confusion_matrix.png"
         )
         evaluator.plot_confusion_matrix(
-            all_targets, all_predictions, save_dir / "confusion_matrix_raw.png", normalize=None
+            all_targets, all_predictions, save_dir / "confusion_matrix_raw.png", normalize="none"
         )
         evaluator.plot_roc_curves(all_targets, all_probabilities, save_dir / "roc_curves.png")
         evaluator.plot_precision_recall_curves(

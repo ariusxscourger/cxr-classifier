@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
@@ -25,8 +25,8 @@ class LabelSmoothingCrossEntropy(nn.Module):
 
     def __init__(self, smoothing: float = 0.1):
         super().__init__()
-        self.smoothing = smoothing
-        self.confidence = 1.0 - smoothing
+        self.smoothing = float(smoothing)
+        self.confidence = 1.0 - self.smoothing
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         logprobs = F.log_softmax(x, dim=-1)
@@ -42,8 +42,8 @@ class Trainer:
     def __init__(
         self,
         model: nn.Module,
-        train_loader: torch.utils.data.DataLoader,
-        val_loader: torch.utils.data.DataLoader,
+        train_loader: Any,
+        val_loader: Any,
         config: Config,
         device: torch.device,
     ):
@@ -63,15 +63,17 @@ class Trainer:
         self.scheduler = self._create_scheduler(config.training.scheduler)
 
         # Mixed precision
-        self.scaler = GradScaler(enabled=config.training.mixed_precision and device.type == "cuda")
+        device_type = "cuda" if device.type == "cuda" else "cpu"
+        self.device_type = device_type
+        self.scaler = GradScaler(device_type, enabled=config.training.mixed_precision and device.type == "cuda")
 
         # Gradient clipping
-        self.gradient_clip = config.training.gradient_clip
+        self.gradient_clip = float(config.training.gradient_clip)
 
         # Early stopping
-        self.early_stopping_patience = config.training.early_stopping.patience
-        self.early_stopping_min_delta = config.training.early_stopping.min_delta
-        self.early_stopping_mode = config.training.early_stopping.mode
+        self.early_stopping_patience = int(config.training.early_stopping.patience)
+        self.early_stopping_min_delta = float(config.training.early_stopping.min_delta)
+        self.early_stopping_mode = str(config.training.early_stopping.mode)
         self.best_metric = float("-inf") if self.early_stopping_mode == "max" else float("inf")
         self.early_stopping_counter = 0
 
@@ -238,7 +240,7 @@ class Trainer:
             self.optimizer.zero_grad()
 
             # Mixed precision forward
-            with autocast(enabled=self.scaler.is_enabled()):
+            with autocast(self.device_type, enabled=self.scaler.is_enabled()):
                 outputs = self.model(images)
                 loss = self.criterion(outputs, targets)
 
@@ -287,7 +289,7 @@ class Trainer:
                 images = images.to(self.device, non_blocking=True)
                 targets = targets.to(self.device, non_blocking=True)
 
-                with autocast(enabled=self.scaler.is_enabled()):
+                with autocast(self.device_type, enabled=self.scaler.is_enabled()):
                     outputs = self.model(images)
                     loss = self.criterion(outputs, targets)
 

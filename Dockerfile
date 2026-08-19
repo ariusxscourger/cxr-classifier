@@ -13,7 +13,7 @@ WORKDIR /app
 
 # System dependencies for OpenCV, matplotlib, and visualization
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx \
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1 \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,7 +27,7 @@ COPY scripts/ ./scripts/
 RUN pip install --no-cache-dir -e .
 
 # Create directories for outputs and data
-RUN mkdir -p /app/logs /app/outputs /app/data && \
+RUN mkdir -p /app/logs /app/outputs /app/data /app/dataset && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user

@@ -64,7 +64,7 @@ echo "📁 Creating directories..."
 mkdir -p logs outputs models data
 
 # Check dataset
-DATASET_PATH="./data/Chest X-Ray"
+DATASET_PATH="./dataset"
 if [ -d "$DATASET_PATH" ]; then
     echo "✅ Dataset found at: $DATASET_PATH"
     echo "   Train: $(find "$DATASET_PATH/train" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | wc -l) images"
@@ -73,7 +73,7 @@ if [ -d "$DATASET_PATH" ]; then
 else
     echo "⚠️  Dataset not found at: $DATASET_PATH"
     echo "   Download from: https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset"
-    echo "   Extract to ./data/Chest X-Ray/ or update configs/config.yaml with your path"
+    echo "   Extract to ./dataset/ or update configs/config.yaml with your path"
 fi
 
 # Check device

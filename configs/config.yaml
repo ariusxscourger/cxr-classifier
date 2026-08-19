@@ -1,7 +1,7 @@
 # Chest X-Ray Classification - Configuration
 # Dataset paths - UPDATE THIS PATH TO YOUR DATASET LOCATION
 dataset:
-  data_root: "/run/media/saqib/067E00563129A4C4/Chest X-Ray"
+  data_root: "dataset"
   train_dir: "train"
   val_dir: "val"
   test_dir: "test"

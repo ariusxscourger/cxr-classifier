@@ -107,7 +107,7 @@ cd cxr-classifier
 
 # Download dataset from Kaggle
 # https://www.kaggle.com/datasets/muhammadrehan00/chest-xray-dataset
-# Extract to ./data/Chest X-Ray/
+# Extract to ./dataset/
 
 # Build and run with Docker Compose
 docker compose build

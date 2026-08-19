@@ -11,7 +11,7 @@ services:
         GID: ${GID:-1000}
     volumes:
       # Mount dataset (adjust host path as needed)
-      - ./data:/app/data:ro
+      - ./dataset:/app/dataset:ro
       # Mount configs for easy modification
       - ./configs:/app/configs
       # Persist outputs and logs
@@ -40,7 +40,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     volumes:
-      - ./data:/app/data:ro
+      - ./dataset:/app/dataset:ro
       - ./configs:/app/configs
       - ./outputs:/app/outputs
       - ./logs:/app/logs
@@ -75,7 +75,7 @@ services:
       - ./notebooks:/app/notebooks
       - ./configs:/app/configs
       - ./src:/app/src
-      - ./data:/app/data:ro
+      - ./dataset:/app/dataset:ro
       - ./outputs:/app/outputs
       - ./logs:/app/logs
     environment:
@@ -93,7 +93,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     volumes:
-      - ./data:/app/data:ro
+      - ./dataset:/app/dataset:ro
       - ./configs:/app/configs
       - ./outputs:/app/outputs
       - ./logs:/app/logs
@@ -111,10 +111,10 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     volumes:
-      - ./data:/app/data:ro
+      - ./dataset:/app/dataset:ro
       - ./configs:/app/configs
       - ./outputs:/app/outputs
     environment:
       - HF_HUB_OFFLINE=1
       - WANDB_MODE=offline
-    command: python scripts/inference.py --config configs/config.yaml --checkpoint /app/outputs/best_model.pth --image /app/data/test.jpg --device cuda
+    command: python scripts/inference.py --config configs/config.yaml --checkpoint /app/outputs/best_model.pth --image /app/dataset/test/normal/normal-1.jpg --device cuda

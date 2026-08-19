@@ -33,6 +33,7 @@ outputs/
 *.log
 wandb/
 *.wandb
+dataset/
 
 # Model checkpoints
 *.pth

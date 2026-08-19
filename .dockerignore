@@ -5,6 +5,7 @@
 .vscode/
 .idea/
 *.md
+!README.md
 LICENSE
 CONTRIBUTING.md
 SECURITY.md
@@ -34,6 +35,8 @@ env/
 ENV/
 
 # Data (large files)
+dataset/
+data/
 data/Chest X-Ray/
 data/chest-xray-dataset/
 *.csv

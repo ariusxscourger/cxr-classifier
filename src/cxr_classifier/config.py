@@ -24,6 +24,14 @@ class DatasetConfig:
     pin_memory: bool = True
     persistent_workers: bool = True
 
+    def __post_init__(self) -> None:
+        self.num_classes = int(self.num_classes)
+        self.image_size = int(self.image_size)
+        self.batch_size = int(self.batch_size)
+        self.num_workers = int(self.num_workers)
+        self.pin_memory = bool(self.pin_memory)
+        self.persistent_workers = bool(self.persistent_workers)
+
 
 @dataclass
 class ModelConfig:
@@ -34,6 +42,12 @@ class ModelConfig:
     drop_path_rate: float = 0.1
     drop_rate: float = 0.2
 
+    def __post_init__(self) -> None:
+        self.pretrained = bool(self.pretrained)
+        self.num_classes = int(self.num_classes)
+        self.drop_path_rate = float(self.drop_path_rate)
+        self.drop_rate = float(self.drop_rate)
+
 
 @dataclass
 class OptimizerConfig:
@@ -43,6 +57,13 @@ class OptimizerConfig:
     weight_decay: float = 0.05
     betas: List[float] = field(default_factory=lambda: [0.9, 0.999])
     eps: float = 1e-8
+
+    def __post_init__(self) -> None:
+        self.lr = float(self.lr)
+        self.weight_decay = float(self.weight_decay)
+        self.eps = float(self.eps)
+        if self.betas:
+            self.betas = [float(b) for b in self.betas]
 
 
 @dataclass
@@ -55,12 +76,22 @@ class SchedulerConfig:
     warmup_epochs: int = 5
     warmup_lr: float = 1e-6
 
+    def __post_init__(self) -> None:
+        self.t_0 = int(self.t_0)
+        self.t_mult = int(self.t_mult)
+        self.eta_min = float(self.eta_min)
+        self.warmup_epochs = int(self.warmup_epochs)
+        self.warmup_lr = float(self.warmup_lr)
+
 
 @dataclass
 class LossConfig:
     """Loss function configuration."""
     name: str = "label_smoothing_cross_entropy"
     label_smoothing: float = 0.1
+
+    def __post_init__(self) -> None:
+        self.label_smoothing = float(self.label_smoothing)
 
 
 @dataclass
@@ -69,6 +100,10 @@ class EarlyStoppingConfig:
     patience: int = 15
     min_delta: float = 1e-4
     mode: str = "max"
+
+    def __post_init__(self) -> None:
+        self.patience = int(self.patience)
+        self.min_delta = float(self.min_delta)
 
 
 @dataclass
@@ -83,6 +118,13 @@ class TrainingConfig:
     early_stopping: EarlyStoppingConfig = field(default_factory=EarlyStoppingConfig)
     save_best_only: bool = True
     save_top_k: int = 3
+
+    def __post_init__(self) -> None:
+        self.epochs = int(self.epochs)
+        self.gradient_clip = float(self.gradient_clip)
+        self.mixed_precision = bool(self.mixed_precision)
+        self.save_best_only = bool(self.save_best_only)
+        self.save_top_k = int(self.save_top_k)
 
 
 @dataclass
@@ -105,6 +147,12 @@ class LoggingConfig:
     save_dir: str = "outputs"
     save_interval: int = 1
 
+    def __post_init__(self) -> None:
+        self.use_wandb = bool(self.use_wandb)
+        self.use_tensorboard = bool(self.use_tensorboard)
+        self.log_interval = int(self.log_interval)
+        self.save_interval = int(self.save_interval)
+
 
 @dataclass
 class EvaluationConfig:
@@ -119,6 +167,10 @@ class HardwareConfig:
     device: str = "cpu"
     mixed_precision: bool = True
     compile_model: bool = False
+
+    def __post_init__(self) -> None:
+        self.mixed_precision = bool(self.mixed_precision)
+        self.compile_model = bool(self.compile_model)
 
 
 @dataclass
