@@ -97,7 +97,7 @@ class AugmentationConfig:
 class LoggingConfig:
     """Logging configuration."""
     use_wandb: bool = True
-    wandb_project: str = "chestxray-csc"
+    wandb_project: str = "cxr-classifier"
     wandb_entity: Optional[str] = None
     use_tensorboard: bool = True
     log_dir: str = "logs"

@@ -171,12 +171,12 @@ jobs:
 Add to top of README.md:
 
 ```markdown
-[![CI](https://github.com/YOUR_USERNAME/ChestXRay-CSC-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/ChestXRay-CSC-Project/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/chestxray-csc-project.svg)](https://pypi.org/project/chestxray-csc-project/)
-[![Python](https://img.shields.io/pypi/pyversions/chestxray-csc-project.svg)](https://pypi.org/project/chestxray-csc-project/)
-[![License](https://img.shields.io/github/license/YOUR_USERNAME/ChestXRay-CSC-Project.svg)](LICENSE)
+[![CI](https://github.com/ariusxscourger/cxr-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/ariusxscourger/cxr-classifier/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/cxr-classifier.svg)](https://pypi.org/project/cxr-classifier/)
+[![Python](https://img.shields.io/pypi/pyversions/cxr-classifier.svg)](https://pypi.org/project/cxr-classifier/)
+[![License](https://img.shields.io/github/license/ariusxscourger/cxr-classifier.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/YOUR_USERNAME/ChestXRay-CSC-Project/pkgs/container/chestxray-csc-project)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/ariusxscourger/cxr-classifier/pkgs/container/cxr-classifier)
 ```
 
 ---
@@ -362,7 +362,7 @@ Chest X-Ray Multi-Class Classification (Normal, Pneumonia, Tuberculosis). Produc
 ### Topics/Tags
 
 ```
-deep-learning, pytorch, computer-vision, medical-imaging, chest-xray, classification, cnn, vision-transformer, convnext, efficientnet, vit, swin, scholarship, csc, medical-ai
+deep-learning, pytorch, computer-vision, medical-imaging, chest-xray, classification, cnn, vision-transformer, convnext, efficientnet, vit, swin, medical-ai
 ```
 
 ---

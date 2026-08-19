@@ -14,8 +14,8 @@ Thank you for your interest in contributing! This is a production-ready medical 
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/ChestXRay-CSC-Project.git
-cd ChestXRay-CSC-Project
+git clone https://github.com/YOUR_USERNAME/cxr-classifier.git
+cd cxr-classifier
 
 # Create virtual environment
 python -m venv .venv

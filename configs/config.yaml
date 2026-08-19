@@ -106,7 +106,7 @@ augmentation:
 # Logging and monitoring
 logging:
   use_wandb: false  # Disabled for fully offline/local training
-  wandb_project: "chestxray-csc"
+  wandb_project: "cxr-classifier"
   wandb_entity: null
   use_tensorboard: true  # Use TensorBoard (local, no account needed)
   log_dir: "logs"

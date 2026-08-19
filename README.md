@@ -13,7 +13,7 @@
 
 ## 📋 Project Overview
 
-**CXR-Classifier** implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet rigorous standards for academic evaluation and scholarship applications.
+**CXR-Classifier** implements a state-of-the-art deep learning pipeline for automated chest X-ray diagnosis, classifying images into three categories: **Normal**, **Pneumonia**, and **Tuberculosis**. The implementation follows best practices for medical AI research and is designed to meet rigorous standards for academic and practical clinical evaluation.
 
 ### Key Highlights
 
@@ -243,7 +243,7 @@ tensorboard --logdir logs
 ```bash
 # Set your API key
 wandb login
-# Dashboard at https://wandb.ai/<your-entity>/chestxray-csc
+# Dashboard at https://wandb.ai/<your-entity>/cxr-classifier
 ```
 
 ### Expected Outputs
@@ -333,7 +333,7 @@ All class probabilities:
 | `vit_tiny_patch16_224` | 5.7M | 22 MB | Vision Transformer tiny |
 | `swin_tiny_patch4_window7_224` | 28.3M | 108 MB | Hierarchical Vision Transformer |
 
-**Recommendation for CSC**: Start with `convnext_tiny` (best accuracy/efficiency balance), then try `convnext_small` or `swin_tiny` for higher performance.
+**Recommendation**: Start with `convnext_tiny` (best accuracy/efficiency balance), then try `convnext_small` or `swin_tiny` for higher performance.
 
 ---
 
@@ -352,9 +352,9 @@ python scripts/train.py --seed 42
 
 ---
 
-## 📝 CSC Scholarship - What Professors Expect
+## 📝 Key Design & Quality Standards
 
-This project demonstrates:
+The implementation is designed to demonstrate best-in-class deep learning engineering practices, including:
 
 ### 1. **Technical Rigor**
 - ✅ Clean, modular codebase with type hints
@@ -461,8 +461,7 @@ This project demonstrates:
 
 ## 🎓 Academic Use
 
-This project is designed for:
-- **CSC Scholarship Application** (Chinese Government Scholarship)
+This project is suitable for:
 - **Master's/PhD Research Portfolio**
 - **Medical AI Course Projects**
 - **Conference Paper Implementation** (MICCAI, MIDL, CVPR workshops)
@@ -472,11 +471,11 @@ This project is designed for:
 If you use this codebase for academic work, please cite:
 
 ```bibtex
-@software{chestxray_csc_2025,
+@software{cxr_classifier_2025,
   author = {Muhammad Saqib},
-  title = {Chest X-Ray Multi-Class Classification for CSC Scholarship},
+  title = {Chest X-Ray Multi-Class Classification Pipeline},
   year = {2025},
-  url = {https://github.com/yourusername/ChestXRay-CSC-Project}
+  url = {https://github.com/yourusername/cxr-classifier}
 }
 ```
 
@@ -484,7 +483,7 @@ If you use this codebase for academic work, please cite:
 
 ## 🤝 Contributing
 
-This is an academic project for scholarship application. However, improvements are welcome:
+This is an academic project. However, improvements are welcome:
 
 1. Fork the repository
 2. Create a feature branch
