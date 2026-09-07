@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 import torch
-import yaml
 
 # Disable HF Hub and wandb network calls for fully offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -21,8 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from cxr_classifier.config import load_config
 from cxr_classifier.data import get_dataloaders
-from cxr_classifier.models import create_model
 from cxr_classifier.evaluation import evaluate_model
+from cxr_classifier.models import create_model
 
 
 def parse_args() -> argparse.Namespace:

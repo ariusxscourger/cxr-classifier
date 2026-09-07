@@ -14,7 +14,7 @@ Thank you for your interest in contributing! This is a production-ready medical 
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/cxr-classifier.git
+git clone https://github.com/ariusxscourger/cxr-classifier.git
 cd cxr-classifier
 
 # Create virtual environment

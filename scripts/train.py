@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 
 import torch
-import yaml
 
 # Disable HF Hub and wandb network calls for fully offline operation
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -20,9 +19,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from cxr_classifier.config import load_config
 from cxr_classifier.data import get_dataloaders
+from cxr_classifier.evaluation import evaluate_model
 from cxr_classifier.models import create_model, get_model_info
 from cxr_classifier.training import Trainer
-from cxr_classifier.evaluation import evaluate_model
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,6 +62,7 @@ def parse_args() -> argparse.Namespace:
 def set_seed(seed: int) -> None:
     """Set random seeds for reproducibility."""
     import random
+
     import numpy as np
 
     random.seed(seed)
@@ -174,15 +174,19 @@ def main() -> None:
         print("\nTraining interrupted by user")
         # Save emergency checkpoint
         emergency_path = Path(config.logging.save_dir) / "emergency_checkpoint.pth"
-        torch.save({
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": trainer.optimizer.state_dict(),
-            "config": config.to_dict(),
-        }, emergency_path)
+        torch.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": trainer.optimizer.state_dict(),
+                "config": config.to_dict(),
+            },
+            emergency_path,
+        )
         print(f"Emergency checkpoint saved to {emergency_path}")
     except Exception as e:
         print(f"\nTraining failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
