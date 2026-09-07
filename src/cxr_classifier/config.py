@@ -12,7 +12,7 @@ from omegaconf import OmegaConf, DictConfig
 @dataclass
 class DatasetConfig:
     """Dataset configuration."""
-    data_root: str
+    data_root: str = "./dataset"
     train_dir: str = "train"
     val_dir: str = "val"
     test_dir: str = "test"

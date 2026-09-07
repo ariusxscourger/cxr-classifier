@@ -60,8 +60,22 @@ class ChestXRayDataset(Dataset):
                 print(f"Warning: Directory {class_dir} does not exist")
                 continue
 
-            for ext in ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"):
-                for img_path in class_dir.glob(ext):
+            # Case-insensitive single pass: collect unique paths, then sort.
+            # (Naive dual-case globs double-count on Windows due to case-
+            # insensitive filesystem semantics.)
+            seen: set = set()
+            for ext in ("jpg", "jpeg", "png"):
+                for img_path in class_dir.glob(f"*.{ext}"):
+                    if img_path in seen:
+                        continue
+                    seen.add(img_path)
+                    samples.append((img_path, self.class_to_idx[class_name]))
+            # Also catch upper-case extensions explicitly (POSIX systems)
+            for ext in ("JPG", "JPEG", "PNG"):
+                for img_path in class_dir.glob(f"*.{ext}"):
+                    if img_path in seen:
+                        continue
+                    seen.add(img_path)
                     samples.append((img_path, self.class_to_idx[class_name]))
 
         print(f"Loaded {len(samples)} samples for {self.split} split")
@@ -153,6 +167,8 @@ def build_augmentation_pipeline(cfg: Dict[str, Any]) -> A.Compose:
             transforms_list.append(A.CoarseDropout(**params))
         elif name == "Cutout":
             transforms_list.append(A.Cutout(**params))
+        elif name == "CLAHE":
+            transforms_list.append(A.CLAHE(**params))
         elif name == "Normalize":
             transforms_list.append(A.Normalize(**params))
         elif name == "ToTensorV2":

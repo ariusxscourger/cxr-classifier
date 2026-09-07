@@ -45,7 +45,7 @@ jobs:
         run: mypy src/
 
       - name: Run Tests
-        run: pytest tests/ -v --cov=src/chestxray --cov-report=xml
+        run: pytest tests/ -v --cov=src/cxr_classifier --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

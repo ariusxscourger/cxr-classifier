@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -24,6 +26,7 @@ from sklearn.metrics import (
     average_precision_score,
 )
 import seaborn as sns
+from tqdm import tqdm
 
 
 class Evaluator:
@@ -61,36 +64,50 @@ class Evaluator:
         metrics["accuracy"] = accuracy_score(targets, predictions)
 
         # Per-class metrics
-        metrics["precision_per_class"] = precision_score(targets, predictions, average=None, zero_division=0).tolist()
-        metrics["recall_per_class"] = recall_score(targets, predictions, average=None, zero_division=0).tolist()
-        metrics["f1_per_class"] = f1_score(targets, predictions, average=None, zero_division=0).tolist()
+        metrics["precision_per_class"] = precision_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
+        metrics["recall_per_class"] = recall_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
+        metrics["f1_per_class"] = f1_score(
+            targets, predictions, average=None, zero_division=0
+        ).tolist()
 
         # Macro averages (equally weight each class)
-        metrics["precision_macro"] = precision_score(targets, predictions, average="macro", zero_division=0)
-        metrics["recall_macro"] = recall_score(targets, predictions, average="macro", zero_division=0)
-        metrics["f1_macro"] = f1_score(targets, predictions, average="macro", zero_division=0)
+        metrics["precision_macro"] = precision_score(
+            targets, predictions, average="macro", zero_division=0
+        )
+        metrics["recall_macro"] = recall_score(
+            targets, predictions, average="macro", zero_division=0
+        )
+        metrics["f1_macro"] = f1_score(
+            targets, predictions, average="macro", zero_division=0
+        )
 
         # Weighted averages (weight by support)
-        metrics["precision_weighted"] = precision_score(targets, predictions, average="weighted", zero_division=0)
-        metrics["recall_weighted"] = recall_score(targets, predictions, average="weighted", zero_division=0)
-        metrics["f1_weighted"] = f1_score(targets, predictions, average="weighted", zero_division=0)
+        metrics["precision_weighted"] = precision_score(
+            targets, predictions, average="weighted", zero_division=0
+        )
+        metrics["recall_weighted"] = recall_score(
+            targets, predictions, average="weighted", zero_division=0
+        )
+        metrics["f1_weighted"] = f1_score(
+            targets, predictions, average="weighted", zero_division=0
+        )
 
         # AUC metrics (one-vs-rest)
         try:
-            # Macro AUC
             metrics["auc_macro"] = roc_auc_score(
                 targets, probabilities, multi_class="ovr", average="macro"
             )
-            # Weighted AUC
             metrics["auc_weighted"] = roc_auc_score(
                 targets, probabilities, multi_class="ovr", average="weighted"
             )
-            # Per-class AUC
             metrics["auc_per_class"] = roc_auc_score(
                 targets, probabilities, multi_class="ovr", average=None
             ).tolist()
         except ValueError:
-            # Handle case where a class has no samples
             metrics["auc_macro"] = 0.0
             metrics["auc_weighted"] = 0.0
             metrics["auc_per_class"] = [0.0] * self.num_classes
@@ -218,7 +235,9 @@ class Evaluator:
         fig, ax = plt.subplots(figsize=figsize)
 
         for i in range(self.num_classes):
-            precision, recall, _ = precision_recall_curve(onehot_targets[:, i], probabilities[:, i])
+            precision, recall, _ = precision_recall_curve(
+                onehot_targets[:, i], probabilities[:, i]
+            )
             ap = average_precision_score(onehot_targets[:, i], probabilities[:, i])
             ax.plot(recall, precision, label=f"{self.class_names[i]} (AP = {ap:.3f})")
 
@@ -297,7 +316,7 @@ class Evaluator:
 
         # Per-class F1
         for i, class_name in enumerate(self.class_names):
-            class_f1 = [m.get("f1_per_class", [0]*self.num_classes)[i] for m in val_metrics]
+            class_f1 = [m.get("f1_per_class", [0] * self.num_classes)[i] for m in val_metrics]
             axes[5].plot(epochs, class_f1, label=class_name)
         axes[5].set_xlabel("Epoch")
         axes[5].set_ylabel("F1 Score")
@@ -331,15 +350,10 @@ class Evaluator:
 
         return report
 
-    def save_metrics(
-        self,
-        metrics: Dict[str, float],
-        save_path: str,
-    ) -> None:
+    def save_metrics(self, metrics: Dict[str, float], save_path: str) -> None:
         """Save metrics to JSON file."""
         import json
 
-        # Convert numpy types to Python types
         def convert(obj):
             if isinstance(obj, (np.integer, np.floating)):
                 return float(obj)
@@ -418,16 +432,10 @@ def evaluate_model(
             all_predictions.extend(predictions.cpu().numpy())
             all_probabilities.extend(probabilities.cpu().numpy())
 
-    # Compute metrics
     metrics = evaluator.compute_metrics(all_targets, all_predictions, all_probabilities)
-
-    # Print metrics
     evaluator.print_metrics(metrics)
-
-    # Generate classification report
     report = evaluator.generate_classification_report(all_targets, all_predictions)
 
-    # Save results if directory provided
     if save_dir:
         save_dir = Path(save_dir)
         save_dir.mkdir(parents=True, exist_ok=True)
@@ -437,17 +445,18 @@ def evaluate_model(
         with open(save_dir / "classification_report.txt", "w") as f:
             f.write(report)
 
-        # Save predictions
         np.save(save_dir / "targets.npy", np.array(all_targets))
         np.save(save_dir / "predictions.npy", np.array(all_predictions))
         np.save(save_dir / "probabilities.npy", np.array(all_probabilities))
 
-        # Generate plots
         evaluator.plot_confusion_matrix(
             all_targets, all_predictions, save_dir / "confusion_matrix.png"
         )
         evaluator.plot_confusion_matrix(
-            all_targets, all_predictions, save_dir / "confusion_matrix_raw.png", normalize="none"
+            all_targets,
+            all_predictions,
+            save_dir / "confusion_matrix_raw.png",
+            normalize="none",
         )
         evaluator.plot_roc_curves(all_targets, all_probabilities, save_dir / "roc_curves.png")
         evaluator.plot_precision_recall_curves(
@@ -463,9 +472,192 @@ def evaluate_model(
     }
 
 
-# Add tqdm import if not already imported
-try:
-    from tqdm import tqdm
-except ImportError:
-    def tqdm(iterable, desc=""):
-        return iterable
+class GradCAM:
+    """Gradient-weighted Class Activation Mapping for visual explanation.
+
+    Hooks the forward activations and gradients of the last convolutional
+    block of any timm model that exposes ``model.stages`` (ConvNeXt, Swin,
+    EfficientNet) or ``model.layer4`` (ResNet). Works with a single
+    forward + backward pass.
+
+    Example::
+
+        gradcam = GradCAM(model)
+        heatmap = gradcam(input_tensor, class_idx=pred_class)
+        overlay_bgr = gradcam.overlay(heatmap, image_rgb)
+    """
+
+    def __init__(self, model: nn.Module, target_layer: Optional[nn.Module] = None):
+        self.model = model
+        # Strip torch.compile wrappers if any
+        raw = getattr(model, "_orig_mod", model)
+        if target_layer is None:
+            for candidate in ("stages", "layer4", "layers"):
+                if hasattr(raw, candidate):
+                    target_layer = getattr(raw, candidate)[-1]
+                    break
+        if target_layer is None:
+            raise ValueError(
+                "Could not auto-detect a target conv layer. Pass `target_layer` explicitly."
+            )
+        self.target_layer = target_layer
+        self.activations: Optional[torch.Tensor] = None
+        self.gradients: Optional[torch.Tensor] = None
+        self._fwd_handle = target_layer.register_forward_hook(self._save_activation)
+        self._bwd_handle = target_layer.register_full_backward_hook(self._save_gradient)
+
+    def _save_activation(self, module, inputs, output):
+        self.activations = output.detach()
+
+    def _save_gradient(self, module, grad_input, grad_output):
+        self.gradients = grad_output[0].detach()
+
+    def remove_hooks(self) -> None:
+        self._fwd_handle.remove()
+        self._bwd_handle.remove()
+
+    def __call__(
+        self, input_tensor: torch.Tensor, class_idx: Optional[int] = None
+    ) -> np.ndarray:
+        """Generate a CAM heatmap (H, W) in [0, 1] for a single-image batch."""
+        import cv2
+
+        was_training = self.model.training
+        self.model.eval()
+        try:
+            self.model.zero_grad()
+            logits = self.model(input_tensor)
+            if class_idx is None:
+                class_idx = int(logits.argmax(dim=-1).item())
+            score = logits[:, class_idx].sum()
+            score.backward(retain_graph=False)
+
+            # Global-average-pool gradients over all non-batch, non-channel dims
+            spatial_dims = tuple(range(2, self.gradients.ndim))
+            weights = self.gradients.mean(dim=spatial_dims, keepdim=True)
+            cam = (weights * self.activations).sum(dim=1, keepdim=True)
+            cam = F.relu(cam)
+
+            cam_up = F.interpolate(
+                cam, size=input_tensor.shape[-2:], mode="bilinear", align_corners=False
+            )
+            heatmap = cam_up[0, 0].cpu().numpy()
+            heatmap -= heatmap.min()
+            denom = float(heatmap.max()) if heatmap.max() > 0 else 1.0
+            heatmap /= denom
+            return heatmap.astype(np.float32)
+        finally:
+            if was_training:
+                self.model.train()
+
+    def overlay(
+        self,
+        heatmap: np.ndarray,
+        image_rgb: np.ndarray,
+        alpha: float = 0.45,
+        colormap: int = None,
+    ) -> np.ndarray:
+        """Overlay a heatmap onto an RGB uint8 image. Returns BGR uint8."""
+        import cv2
+
+        if colormap is None:
+            colormap = cv2.COLORMAP_JET
+
+        heatmap_uint8 = np.uint8(255 * heatmap)
+        color = cv2.applyColorMap(heatmap_uint8, colormap)
+        if color.shape[:2] != image_rgb.shape[:2]:
+            color = cv2.resize(color, (image_rgb.shape[1], image_rgb.shape[0]))
+        image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+        return cv2.addWeighted(image_bgr, 1.0 - alpha, color, alpha, 0)
+
+
+def generate_gradcam_grid(
+    model: nn.Module,
+    dataset,
+    device: torch.device,
+    class_names: List[str],
+    save_dir: Optional[str] = None,
+    num_samples: int = 6,
+) -> Path:
+    """Save a grid of Grad-CAM overlays, organized by true class.
+
+    Picks the first ``num_samples`` correctly-classified images for each class.
+
+    Args:
+        model: Trained model (will be put in eval mode).
+        dataset: Dataset returning ``(image_tensor, label_int)``.
+        device: Torch device.
+        class_names: Display names per class.
+        save_dir: Output directory (created if missing).
+        num_samples: Images per class.
+
+    Returns:
+        Path to the saved ``gradcam_grid.png``.
+    """
+    import cv2
+
+    model.eval()
+    gradcam = GradCAM(model)
+    save_dir = Path(save_dir) if save_dir else Path("outputs/gradcam")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    seen_per_class: Dict[int, int] = {i: 0 for i in range(len(class_names))}
+
+    fig, axes = plt.subplots(
+        len(class_names),
+        num_samples,
+        figsize=(3 * num_samples, 3 * len(class_names)),
+    )
+    if len(class_names) == 1:
+        axes = np.expand_dims(axes, 0)
+    elif num_samples == 1:
+        axes = np.expand_dims(axes, 1)
+
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+
+    try:
+            for idx in range(len(dataset)):
+                if all(v >= num_samples for v in seen_per_class.values()):
+                    break
+                image, label = dataset[idx]
+                if seen_per_class[label] >= num_samples:
+                    continue
+
+                input_batch = image.unsqueeze(0).to(device)
+                # Prediction step: no autograd needed (just argmax)
+                with torch.no_grad():
+                    logits = model(input_batch)
+                    pred = int(logits.argmax(dim=-1).item())
+                if pred != label:
+                    continue
+
+                # GradCAM step: MUST run with autograd enabled for the backward pass
+                heatmap = gradcam(input_batch, class_idx=pred)
+
+                img_np = image.cpu().numpy().transpose(1, 2, 0)
+                img_np = np.clip(img_np * std + mean, 0, 1)
+                img_uint8 = np.uint8(255 * img_np)
+                overlay_bgr = gradcam.overlay(heatmap, img_uint8)
+                overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
+
+                ax = axes[label, seen_per_class[label]]
+                ax.imshow(overlay_rgb)
+                ax.set_title(f"true={class_names[label]} | pred={class_names[pred]}")
+                ax.axis("off")
+                seen_per_class[label] += 1
+    finally:
+        gradcam.remove_hooks()
+
+    # Hide unused axes
+    for c, name in enumerate(class_names):
+        for j in range(num_samples):
+            if seen_per_class[c] <= j:
+                axes[c, j].axis("off")
+
+    plt.tight_layout()
+    out_path = save_dir / "gradcam_grid.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Grad-CAM grid saved to {out_path}")
+    return out_path

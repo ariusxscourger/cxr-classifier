@@ -14,7 +14,7 @@ from cxr_classifier.config import Config, load_config
 from cxr_classifier.data import ChestXRayDataset, get_dataloaders
 from cxr_classifier.models import create_model
 from cxr_classifier.training import Trainer
-from cxr_classifier.evaluation import Evaluator
+from cxr_classifier.evaluation import Evaluator, GradCAM, generate_gradcam_grid
 
 __all__ = [
     "Config",
@@ -24,4 +24,6 @@ __all__ = [
     "create_model",
     "Trainer",
     "Evaluator",
+    "GradCAM",
+    "generate_gradcam_grid",
 ]

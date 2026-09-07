@@ -81,9 +81,13 @@ augmentation:
       std: [0.229, 0.224, 0.225]
     - name: "ToTensorV2"
   val:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
     - name: "Resize"
-      height: 224
-      width: 224
+      height: 256
+      width: 256
     - name: "CenterCrop"
       height: 224
       width: 224
@@ -92,9 +96,13 @@ augmentation:
       std: [0.229, 0.224, 0.225]
     - name: "ToTensorV2"
   test:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
     - name: "Resize"
-      height: 224
-      width: 224
+      height: 256
+      width: 256
     - name: "CenterCrop"
       height: 224
       width: 224

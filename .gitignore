@@ -34,6 +34,7 @@ outputs/
 wandb/
 *.wandb
 dataset/
+dataset_test/
 
 # Model checkpoints
 *.pth
