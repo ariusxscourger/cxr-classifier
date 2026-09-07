@@ -53,7 +53,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
             model.head.fc = nn.Sequential(
                 nn.Dropout(drop_rate),
                 nn.Linear(in_features, 512),
-                nn.BatchNorm1d(512),
+                nn.LayerNorm(512),
                 nn.ReLU(inplace=True),
                 nn.Dropout(drop_rate),
                 nn.Linear(512, num_classes),
@@ -64,7 +64,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
             model.head = nn.Sequential(
                 nn.Dropout(drop_rate),
                 nn.Linear(in_features, 512),
-                nn.BatchNorm1d(512),
+                nn.LayerNorm(512),
                 nn.ReLU(inplace=True),
                 nn.Dropout(drop_rate),
                 nn.Linear(512, num_classes),
@@ -75,7 +75,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
         model.fc = nn.Sequential(
             nn.Dropout(drop_rate),
             nn.Linear(in_features, 512),
-            nn.BatchNorm1d(512),
+            nn.LayerNorm(512),
             nn.ReLU(inplace=True),
             nn.Dropout(drop_rate),
             nn.Linear(512, num_classes),
@@ -87,7 +87,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
             model.classifier = nn.Sequential(
                 nn.Dropout(drop_rate),
                 nn.Linear(in_features, 512),
-                nn.BatchNorm1d(512),
+                nn.LayerNorm(512),
                 nn.ReLU(inplace=True),
                 nn.Dropout(drop_rate),
                 nn.Linear(512, num_classes),
@@ -101,7 +101,7 @@ def _modify_classifier(model: nn.Module, num_classes: int, drop_rate: float) -> 
         model.head.fc = nn.Sequential(
             nn.Dropout(drop_rate),
             nn.Linear(in_features, 512),
-            nn.BatchNorm1d(512),
+            nn.LayerNorm(512),
             nn.ReLU(inplace=True),
             nn.Dropout(drop_rate),
             nn.Linear(512, num_classes),

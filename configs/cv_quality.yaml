@@ -1,0 +1,135 @@
+# CV-quality config: produces publication-grade metrics for portfolio/CV.
+#
+# Designed for the AMD RX 7800 XT (16 GB) via DirectML:
+#   - 224x224 input  (matches ImageNet pretraining)
+#   - ConvNeXt-Tiny  (~28M params; modern, well-cited in README)
+#   - Batch 64       (DirectML sweet-spot for 16GB at 224x224)
+#   - 30 epochs
+#   - AMP enabled    (~1.5x speedup on DirectML — see training.py amp_capable)
+# Expected wall-clock on RX 7800 XT: 30 epochs in ~3-4 hours.
+# Target metrics: 0.82+ accuracy, 0.82+ macro F1, 0.95+ AUC.
+
+dataset:
+  data_root: "dataset"
+  train_dir: "train"
+  val_dir: "val"
+  test_dir: "test"
+  classes: ["normal", "pneumonia", "tuberculosis"]
+  num_classes: 3
+  image_size: 224
+  batch_size: 32             # RX 7800 XT 16GB at 224x224 with ConvNeXt-Tiny (~28M params, no AMP)
+  num_workers: 0            # Windows: multiprocessing + OpenCV/CLAHE segfaults; use 0
+  pin_memory: false         # DirectML doesn't benefit from pinned memory
+  persistent_workers: false # requires num_workers > 0
+
+model:
+  name: "convnext_tiny"     # Modern ConvNeXt; pretrained ImageNet weights
+  pretrained: true
+  num_classes: 3
+  drop_path_rate: 0.1
+  drop_rate: 0.1
+
+training:
+  epochs: 30
+  optimizer:
+    name: "adamw"
+    lr: 1e-4                 # Standard for fine-tuning
+    weight_decay: 0.05
+    betas: [0.9, 0.999]
+    eps: 1e-8
+  scheduler:
+    name: "cosine_annealing_warm_restarts"
+    t_0: 10
+    t_mult: 2
+    eta_min: 1e-6
+    warmup_epochs: 3
+    warmup_lr: 1e-6
+  loss:
+    name: "label_smoothing_cross_entropy"
+    label_smoothing: 0.1
+  gradient_clip: 1.0
+  mixed_precision: false    # DirectML doesn't implement AutocastPrivateUse1 ops; see training.py
+  early_stopping:
+    patience: 8
+    min_delta: 1e-4
+    mode: "max"
+  save_best_only: true
+  save_top_k: 3
+
+augmentation:
+  train:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 256
+      width: 256
+    - name: "RandomCrop"
+      height: 224
+      width: 224
+    - name: "HorizontalFlip"
+      p: 0.5
+    - name: "Rotate"
+      limit: 15
+      p: 0.5
+    - name: "RandomBrightnessContrast"
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+      p: 0.5
+    - name: "GaussNoise"
+      std_range: [0.1, 0.2]
+      p: 0.3
+    - name: "CoarseDropout"
+      num_holes_range: [1, 8]
+      hole_height_range: [0.05, 0.15]
+      hole_width_range: [0.05, 0.15]
+      fill: "random_uniform"
+      p: 0.3
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+  val:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 224
+      width: 224
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+  test:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 224
+      width: 224
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+
+logging:
+  use_wandb: false
+  wandb_project: "cxr-classifier"
+  wandb_entity: null
+  use_tensorboard: true
+  log_dir: "logs"
+  log_interval: 50
+  save_dir: "outputs/cv_run"
+  save_interval: 1
+
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "auc", "confusion_matrix"]
+  class_names: ["Normal", "Pneumonia", "Tuberculosis"]
+
+hardware:
+  device: "auto"           # auto-detects DirectML (your RX 7800 XT)
+  mixed_precision: true
+  compile_model: false

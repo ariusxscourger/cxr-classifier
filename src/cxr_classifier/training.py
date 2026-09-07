@@ -5,12 +5,12 @@ Handles training loop, validation, checkpointing, and logging.
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Tuple
 
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
@@ -20,19 +20,19 @@ from cxr_classifier.evaluation import Evaluator
 
 
 class LabelSmoothingCrossEntropy(nn.Module):
-    """Label smoothing cross entropy loss."""
+    """Label smoothing cross entropy loss.
+
+    Uses ``nn.CrossEntropyLoss(label_smoothing=...)`` for backend-native
+    correctness. The manual gather/mean formulation previously used here
+    produces a scatter op in backward that DirectML does not support.
+    """
 
     def __init__(self, smoothing: float = 0.1):
         super().__init__()
         self.smoothing = float(smoothing)
-        self.confidence = 1.0 - self.smoothing
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        logprobs = F.log_softmax(x, dim=-1)
-        nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1)).squeeze(1)
-        smooth_loss = -logprobs.mean(dim=-1)
-        loss = self.confidence * nll_loss + self.smoothing * smooth_loss
-        return loss.mean()
+        return nn.functional.cross_entropy(x, target, label_smoothing=self.smoothing)
 
 
 class Trainer:
@@ -61,12 +61,23 @@ class Trainer:
         # Scheduler
         self.scheduler = self._create_scheduler(config.training.scheduler)
 
-        # Mixed precision
-        device_type = "cuda" if device.type == "cuda" else "cpu"
-        self.device_type = device_type
+        # Mixed precision — only CUDA actually has working AMP via autocast.
+        # DirectML (privateuseone) advertises AutocastPrivateUse1 but does NOT
+        # implement conv2d/aten ops under it (PyTorch DirectML builds omit
+        # them), causing "Could not run 'aten::conv2d' with arguments from
+        # the 'AutocastPrivateUse1' backend". Workaround: keep the device
+        # type for GradScaler but force autocast to CPU (no-op on DirectML
+        # tensors, but doesn't crash). CPU/MPS AMP is also disabled.
+        amp_capable = device.type in ("cuda", "privateuseone", "xpu")
+        autocast_device_type = (
+            "cuda" if device.type == "cuda"
+            else "xpu" if device.type == "xpu"
+            else "cpu"  # privateuseone: see note above
+        )
+        self.device_type = autocast_device_type
         self.scaler = GradScaler(
-            device_type,
-            enabled=config.training.mixed_precision and device.type == "cuda",
+            autocast_device_type,
+            enabled=bool(config.training.mixed_precision) and amp_capable and device.type == "cuda",
         )
 
         # Gradient clipping
@@ -260,13 +271,12 @@ class Trainer:
 
 
                 self.wandb_run = wandb.init(
-                    project=config.logging.wandb_project,
-                    entity=config.logging.wandb_entity,
-                    config=config.to_dict(),
-                    dir=str(self.log_dir),
-                    mode="offline",  # Works without internet
-                    mode="offline",  # Works without internet
-                )
+                        project=config.logging.wandb_project,
+                        entity=config.logging.wandb_entity,
+                        config=config.to_dict(),
+                        dir=str(self.log_dir),
+                        mode="offline",  # Works without internet
+                    )
             except Exception as e:
                 print(f"Warning: Failed to initialize wandb: {e}")
                 self.use_wandb = False
@@ -322,21 +332,21 @@ class Trainer:
             # Update progress bar
             pbar.set_postfix(
                 {
-                    "loss": f"{total_loss / (batch_idx + 1):.4f}",
-                    "acc": f"{100.0 * correct / total:.2f}%",
+        "loss": f"{total_loss / (batch_idx + 1):.4f}",
+        "acc": f"{100.0 * correct / total:.2f}%",
                 }
             )
             pbar.set_postfix(
                 {
-                    "loss": f"{total_loss / (batch_idx + 1):.4f}",
-                    "acc": f"{100.0 * correct / total:.2f}%",
+        "loss": f"{total_loss / (batch_idx + 1):.4f}",
+        "acc": f"{100.0 * correct / total:.2f}%",
                 }
             )
 
             # Log batch metrics
             if batch_idx % self.log_interval == 0:
                 self._log_batch(
-                    epoch, batch_idx, loss.item(), correct / total if total > 0 else 0
+        epoch, batch_idx, loss.item(), correct / total if total > 0 else 0
                 )
 
         avg_loss = total_loss / max(len(self.train_loader), 1)
@@ -375,7 +385,6 @@ class Trainer:
 
         # Compute metrics
         metrics = self.evaluator.compute_metrics(all_targets, all_preds, all_probs)
-        metrics = self.evaluator.compute_metrics(all_targets, all_preds, all_probs)
         metrics["loss"] = avg_loss
 
         return metrics
@@ -389,18 +398,18 @@ class Trainer:
 
             wandb.log(
                 {
-                    "train/batch_loss": loss,
-                    "train/batch_accuracy": accuracy,
-                    "train/learning_rate": self.optimizer.param_groups[0]["lr"],
+        "train/batch_loss": loss,
+        "train/batch_accuracy": accuracy,
+        "train/learning_rate": self.optimizer.param_groups[0]["lr"],
                 },
                 step=step,
             )
 
             wandb.log(
                 {
-                    "train/batch_loss": loss,
-                    "train/batch_accuracy": accuracy,
-                    "train/learning_rate": self.optimizer.param_groups[0]["lr"],
+        "train/batch_loss": loss,
+        "train/batch_accuracy": accuracy,
+        "train/learning_rate": self.optimizer.param_groups[0]["lr"],
                 },
                 step=step,
             )
@@ -522,7 +531,7 @@ class Trainer:
                 continue
             if 1 <= ep <= len(self.val_metrics):
                 candidates.append(
-                    (float(self.val_metrics[ep - 1].get("f1_macro", 0.0)), p)
+        (float(self.val_metrics[ep - 1].get("f1_macro", 0.0)), p)
                 )
 
         # Sort descending by metric and keep top-k; delete the rest

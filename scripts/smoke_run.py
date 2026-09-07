@@ -99,7 +99,7 @@ def main() -> None:
     print("STEP 6 — Single-image inference (one image per class)")
     print("=" * 70)
     for cls in config.dataset.classes:
-        cls_dir = Path("dataset_test/test") / cls
+        cls_dir = Path("dataset/test") / cls
         if not cls_dir.exists():
             continue
         sample_paths = sorted(cls_dir.iterdir())

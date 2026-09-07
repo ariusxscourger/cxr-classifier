@@ -4,7 +4,7 @@ Computes comprehensive metrics and generates visualizations.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -536,6 +536,9 @@ class GradCAM:
         self.model.eval()
         try:
             self.model.zero_grad()
+            # The input is a leaf tensor (no grad_fn). For Grad-CAM to backprop
+            # the score to the activations, the input must require grad.
+            input_tensor = input_tensor.detach().requires_grad_(True)
             logits = self.model(input_tensor)
             if class_idx is None:
                 class_idx = int(logits.argmax(dim=-1).item())
@@ -653,7 +656,8 @@ def generate_gradcam_grid(
 
                 ax = axes[label, seen_per_class[label]]
                 ax.imshow(overlay_rgb)
-                ax.set_title(f"true={class_names[label]} | pred={class_names[pred]}")
+                # Short two-line title so it doesn't overlap neighbouring axes
+                ax.set_title(f"true: {class_names[label]}\npred: {class_names[pred]}", fontsize=8)
                 ax.axis("off")
                 seen_per_class[label] += 1
     finally:

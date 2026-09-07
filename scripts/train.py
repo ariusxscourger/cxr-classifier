@@ -10,15 +10,20 @@ from pathlib import Path
 
 import torch
 
-# Disable HF Hub and wandb network calls for fully offline operation
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["WANDB_MODE"] = "offline"
+# Network toggles. By default we DO NOT force offline so that pretrained
+# weights can download on first run. Set HF_HUB_OFFLINE=1 in the
+# environment (or in .env) to disable network access entirely.
+if os.environ.get("HF_HUB_OFFLINE", "0") != "1":
+    os.environ.pop("HF_HUB_OFFLINE", None)
+if os.environ.get("WANDB_MODE", "online") != "online":
+    pass  # user-supplied WANDB_MODE is honoured
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from cxr_classifier.config import load_config
 from cxr_classifier.data import get_dataloaders
+from cxr_classifier.device import detect_best_device, get_torch_device
 from cxr_classifier.evaluation import evaluate_model
 from cxr_classifier.models import create_model, get_model_info
 from cxr_classifier.training import Trainer
@@ -36,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         "--device",
         type=str,
         default="auto",
-        choices=["auto", "cpu", "cuda", "mps"],
+        choices=["auto", "cpu", "cuda", "mps", "directml", "gpu"],
         help="Device to use for training",
     )
     parser.add_argument(
@@ -74,15 +79,8 @@ def set_seed(seed: int) -> None:
 
 
 def get_device(device_arg: str) -> torch.device:
-    """Determine the device to use."""
-    if device_arg == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            return torch.device("mps")
-        else:
-            return torch.device("cpu")
-    return torch.device(device_arg)
+    """Resolve the requested device (CUDA → DirectML → MPS → CPU)."""
+    return get_torch_device(device_arg)
 
 
 def main() -> None:
@@ -93,7 +91,8 @@ def main() -> None:
 
     # Get device
     device = get_device(args.device)
-    print(f"Using device: {device}")
+    dev_name = detect_best_device()[1] if args.device in ("auto", "gpu") else str(device).split(":")[0]
+    print(f"Using device: {device} ({dev_name})")
 
     # Load configuration
     config_path = Path(args.config)

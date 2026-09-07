@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
         "--device",
         type=str,
         default="auto",
-        choices=["auto", "cpu", "cuda", "mps"],
+        choices=["auto", "cpu", "cuda", "mps", "directml", "gpu"],
         help="Device to use for inference",
     )
     parser.add_argument(
@@ -65,15 +65,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_device(device_arg: str) -> torch.device:
-    """Determine the device to use."""
-    if device_arg == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            return torch.device("mps")
-        else:
-            return torch.device("cpu")
-    return torch.device(device_arg)
+    """Resolve the requested device (CUDA -> DirectML -> MPS -> CPU)."""
+    return get_torch_device(device_arg)
 
 
 def load_image(image_path: str, transform: A.Compose) -> torch.Tensor:
@@ -96,7 +89,8 @@ def main() -> None:
 
     # Get device
     device = get_device(args.device)
-    print(f"Using device: {device}")
+    dev_name = detect_best_device()[1] if args.device in ("auto", "gpu") else str(device).split(":")[0]
+    print(f"Using device: {device} ({dev_name})")
 
     # Load configuration
     config_path = Path(args.config)

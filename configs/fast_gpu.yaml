@@ -1,0 +1,132 @@
+# Fast-training config for AMD RX 7800 XT via DirectML.
+# Optimised for wall-clock speed on a 16 GB consumer GPU:
+#   - Smaller image size (96x96) - ~5.5x faster convolutions vs 224x224
+#   - Larger batch (64) - better DirectML throughput
+#   - ResNet-18 backbone - ~3x faster than convnext_tiny
+#   - 30 epochs - sufficient for transfer learning on 25k images
+# Expected wall-clock: 30 epochs in ~1-2 hours on RX 7800 XT (DirectML).
+
+dataset:
+  data_root: "dataset"
+  train_dir: "train"
+  val_dir: "val"
+  test_dir: "test"
+  classes: ["normal", "pneumonia", "tuberculosis"]
+  num_classes: 3
+  image_size: 96
+  batch_size: 128            # RX 7800 XT 16GB can fit comfortably
+  num_workers: 0             # Windows: multiprocessing + OpenCV/CLAHE segfaults; use 0
+  pin_memory: false        # DirectML doesn't benefit from pinned memory
+  persistent_workers: false  # requires num_workers > 0
+
+model:
+  name: "resnet18"
+  pretrained: true
+  num_classes: 3
+  drop_path_rate: 0.0
+  drop_rate: 0.1
+
+training:
+  epochs: 30
+  optimizer:
+    name: "adamw"
+    lr: 3e-4                  # slightly higher than 1e-4 to compensate for fewer epochs
+    weight_decay: 0.05
+    betas: [0.9, 0.999]
+    eps: 1e-8
+  scheduler:
+    name: "cosine_annealing"
+    t_0: 5
+    t_mult: 1
+    eta_min: 1e-6
+    warmup_epochs: 2
+    warmup_lr: 1e-6
+  loss:
+    name: "label_smoothing_cross_entropy"
+    label_smoothing: 0.1
+  gradient_clip: 1.0
+  mixed_precision: false    # AMP+DirectML: conv2d not registered in AutocastPrivateUse1
+  early_stopping:
+    patience: 8               # fewer epochs => lower patience
+    min_delta: 1e-4
+    mode: "max"
+  save_best_only: true
+  save_top_k: 3
+
+augmentation:
+  train:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 128
+      width: 128
+    - name: "RandomCrop"
+      height: 96
+      width: 96
+    - name: "HorizontalFlip"
+      p: 0.5
+    - name: "Rotate"
+      limit: 15
+      p: 0.5
+    - name: "RandomBrightnessContrast"
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+      p: 0.5
+    - name: "GaussNoise"
+      std_range: [0.1, 0.2]
+      p: 0.3
+    - name: "CoarseDropout"
+      num_holes_range: [1, 8]
+      hole_height_range: [0.05, 0.15]
+      hole_width_range: [0.05, 0.15]
+      fill: "random_uniform"
+      p: 0.3
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+  val:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 96
+      width: 96
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+  test:
+    - name: "CLAHE"
+      clip_limit: 2.0
+      tile_grid_size: [8, 8]
+      p: 1.0
+    - name: "Resize"
+      height: 96
+      width: 96
+    - name: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - name: "ToTensorV2"
+
+logging:
+  use_wandb: false
+  wandb_project: "cxr-classifier"
+  wandb_entity: null
+  use_tensorboard: true
+  log_dir: "logs"
+  log_interval: 50
+  save_dir: "outputs"
+  save_interval: 1
+
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "auc", "confusion_matrix"]
+  class_names: ["Normal", "Pneumonia", "Tuberculosis"]
+
+hardware:
+  device: "auto"
+  mixed_precision: false
+  compile_model: false
